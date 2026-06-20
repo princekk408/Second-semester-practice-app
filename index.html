@@ -6,6 +6,9 @@
 <title>Year 1 Second Semester Practice App</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <style>
 :root{
   --ink:#1c2b2d;
@@ -197,6 +200,39 @@ img.q-image{max-width:100%; border-radius:8px; margin:.6em 0; border:1px solid v
 </head>
 <body>
 <div id="root"></div>
+<div id="boot-error" style="display:none; position:fixed; inset:0; background:#1c2b2d; color:#fff; padding:1.5em; font-family:monospace; font-size:14px; overflow:auto; z-index:9999; white-space:pre-wrap;"></div>
+<script>
+(function(){
+  var errBox = document.getElementById('boot-error');
+  var lines = [];
+  function show(){
+    errBox.style.display = 'block';
+    errBox.textContent = lines.join('\n\n');
+  }
+  window.addEventListener('error', function(e){
+    lines.push('ERROR: ' + e.message + '\nFile: ' + e.filename + '\nLine: ' + e.lineno + ', Col: ' + e.colno);
+    show();
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    lines.push('PROMISE REJECTION: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+    show();
+  });
+  // After 4 seconds, if #root is still empty, report which libraries failed to load
+  setTimeout(function(){
+    var root = document.getElementById('root');
+    if(root && root.innerHTML.trim() === ''){
+      var report = ['App did not render. Library check:'];
+      report.push('React loaded: ' + (typeof React !== 'undefined'));
+      report.push('ReactDOM loaded: ' + (typeof ReactDOM !== 'undefined'));
+      report.push('Babel loaded: ' + (typeof Babel !== 'undefined'));
+      report.push('Supabase loaded: ' + (typeof window.supabase !== 'undefined'));
+      report.push('jsPDF loaded: ' + (typeof window.jspdf !== 'undefined'));
+      lines.push(report.join('\n'));
+      show();
+    }
+  }, 4000);
+})();
+</script>
 
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
