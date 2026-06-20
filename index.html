@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Year 1 Second Semester Practice App</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#1c2b2d;
+  --paper:#f7f5ef;
+  --card:#ffffff;
+  --line:#dcd6c6;
+  --accent:#2f6f5e;
+  --accent-dark:#1f4f42;
+  --warn:#b3491f;
+  --gold:#c08a2e;
+  --muted:#6b6f63;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Source Sans Pro',-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+}
+h1,h2,h3,h4{
+  font-family:'Iowan Old Style',Palatino,'Palatino Linotype',Georgia,serif;
+  font-weight:700;
+  margin:0 0 .4em 0;
+  letter-spacing:.2px;
+}
+p{margin:0 0 .8em 0; line-height:1.5;}
+a{color:var(--accent-dark);}
+button{
+  font-family:inherit;
+  cursor:pointer;
+  border:none;
+  border-radius:var(--radius);
+  padding:.7em 1.3em;
+  font-size:.95rem;
+  font-weight:600;
+  transition:transform .08s ease, box-shadow .15s ease, background .15s ease;
+}
+button:active{transform:translateY(1px);}
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+  outline:3px solid var(--gold);
+  outline-offset:1px;
+}
+.btn-primary{background:var(--accent); color:#fff;}
+.btn-primary:hover{background:var(--accent-dark);}
+.btn-secondary{background:#fff; color:var(--ink); border:1px solid var(--line);}
+.btn-secondary:hover{background:#efeade;}
+.btn-warn{background:var(--warn); color:#fff;}
+.btn-warn:hover{background:#8f3a18;}
+.btn-ghost{background:transparent; color:var(--accent-dark); padding:.5em .8em;}
+.btn-ghost:hover{background:rgba(47,111,94,.08);}
+input,select,textarea{
+  font-family:inherit;
+  font-size:1rem;
+  padding:.65em .8em;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+  width:100%;
+}
+label{font-size:.85rem; font-weight:600; color:var(--muted); display:block; margin-bottom:.3em;}
+.field{margin-bottom:1em;}
+.app-shell{min-height:100vh; display:flex; flex-direction:column;}
+.topbar{
+  background:var(--ink); color:#f7f5ef;
+  padding:.9em 1.4em;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:50;
+}
+.topbar .brand{
+  font-family:'Iowan Old Style',Palatino,Georgia,serif;
+  font-size:1.15rem; font-weight:700; letter-spacing:.3px;
+  display:flex; align-items:center; gap:.5em;
+}
+.topbar .brand .mark{
+  width:1.6em;height:1.6em;border-radius:5px;
+  background:var(--gold); color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem; font-weight:800;
+}
+.topbar nav{display:flex; gap:.3em; align-items:center; flex-wrap:wrap;}
+.topbar nav button{padding:.5em .9em; font-size:.85rem;}
+.main{flex:1; max-width:1100px; margin:0 auto; padding:2em 1.4em; width:100%;}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:1.6em;
+  margin-bottom:1.2em;
+  box-shadow:0 1px 2px rgba(0,0,0,.03);
+}
+.card-grid{display:grid; gap:1em;}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+.center-screen{
+  min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1.5em;
+}
+.auth-card{max-width:420px; width:100%;}
+.eyebrow{
+  text-transform:uppercase; letter-spacing:1.5px; font-size:.72rem;
+  color:var(--accent-dark); font-weight:700; margin-bottom:.5em;
+}
+.muted{color:var(--muted);}
+.divider{height:1px; background:var(--line); margin:1.2em 0;}
+.tag{
+  display:inline-block; background:rgba(47,111,94,.1); color:var(--accent-dark);
+  font-size:.72rem; font-weight:700; padding:.2em .6em; border-radius:5px;
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.error-box{
+  background:#fbeae3; border:1px solid var(--warn); color:#7a2e10;
+  padding:.8em 1em; border-radius:8px; font-size:.9rem; margin-bottom:1em;
+}
+.success-box{
+  background:#e8f3ee; border:1px solid var(--accent); color:var(--accent-dark);
+  padding:.8em 1em; border-radius:8px; font-size:.9rem; margin-bottom:1em;
+}
+.mode-card{
+  cursor:pointer; transition:border-color .15s ease, transform .1s ease;
+  border-width:1.5px;
+}
+.mode-card:hover{border-color:var(--accent); transform:translateY(-2px);}
+.mode-card h3{margin-bottom:.25em;}
+.mode-card .num{
+  font-family:'Iowan Old Style',Georgia,serif; font-size:2rem; color:var(--gold); font-weight:700;
+  line-height:1;
+}
+.question-block{
+  border-bottom:1px solid var(--line);
+  padding-bottom:1.4em; margin-bottom:1.4em;
+}
+.question-block:last-child{border-bottom:none;}
+.option-row{
+  display:flex; align-items:flex-start; gap:.7em;
+  padding:.6em .8em; border:1px solid var(--line); border-radius:8px;
+  margin-bottom:.5em; cursor:pointer; background:#fff;
+}
+.option-row:hover{background:#f5f2e8;}
+.option-row.selected{border-color:var(--accent); background:rgba(47,111,94,.07);}
+.option-row.correct{border-color:var(--accent); background:rgba(47,111,94,.12);}
+.option-row.incorrect{border-color:var(--warn); background:rgba(179,73,31,.08);}
+.option-row input{width:auto; margin-top:.2em;}
+.timer-badge{
+  background:var(--ink); color:#fff; padding:.4em .9em; border-radius:8px;
+  font-weight:700; font-family:'Iowan Old Style',Georgia,serif; letter-spacing:.5px;
+  font-size:1.05rem;
+}
+.timer-badge.low{background:var(--warn);}
+table{width:100%; border-collapse:collapse; font-size:.92rem;}
+th,td{padding:.55em .7em; text-align:left; border-bottom:1px solid var(--line);}
+th{color:var(--muted); font-weight:700; font-size:.78rem; text-transform:uppercase; letter-spacing:.4px;}
+.subject-pill{
+  display:inline-flex; align-items:center; gap:.4em;
+  padding:.5em 1em; border:1px solid var(--line); border-radius:20px;
+  cursor:pointer; background:#fff; font-size:.88rem;
+}
+.subject-pill.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+.subject-pill.done{border-color:var(--accent); color:var(--accent-dark);}
+img.q-image{max-width:100%; border-radius:8px; margin:.6em 0; border:1px solid var(--line);}
+.flash-points{
+  display:inline-flex; align-items:center; gap:.3em; background:var(--gold); color:var(--ink);
+  font-weight:700; padding:.2em .7em; border-radius:20px; font-size:.85rem;
+}
+.empty-state{
+  text-align:center; padding:3em 1em; color:var(--muted);
+}
+.spinner{
+  width:22px;height:22px;border:3px solid var(--line); border-top-color:var(--accent);
+  border-radius:50%; animation:spin .7s linear infinite; display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(28,43,45,.5);
+  display:flex; align-items:center; justify-content:center; z-index:100; padding:1.5em;
+}
+.modal-box{
+  background:#fff; border-radius:var(--radius); padding:1.8em; max-width:600px; width:100%;
+  max-height:85vh; overflow-y:auto;
+}
+.flex-between{display:flex; align-items:center; justify-content:space-between; gap:1em; flex-wrap:wrap;}
+.flex-row{display:flex; align-items:center; gap:.7em; flex-wrap:wrap;}
+@media print{
+  .topbar, .no-print{display:none !important;}
+  body{background:#fff;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// =====================================================================
+// SUPABASE CONFIG
+// =====================================================================
+const SUPABASE_URL = "https://daitijxaextwwcrlqwue.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhaXRpanhhZXh0d3djcmxxd3VlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NTM5NjAsImV4cCI6MjA5NzEyOTk2MH0.xfuqDClliGhaxdv8i-vjR-DZRedfw8X8MZClHioc1U0";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ADMIN PASSWORD - change this constant to your real admin code.
+// (Left as a placeholder here; this is client-side so anyone who reads
+// the page source could see it -- fine for small class use, not for
+// anything sensitive.)
+const ADMIN_CODE = "090684913162008";
+
+const GRADE_BANDS = [
+  { min: 80, grade: "A", points: 5 },
+  { min: 70, grade: "B", points: 4 },
+  { min: 60, grade: "C", points: 3 },
+  { min: 50, grade: "D", points: 2 },
+  { min: 40, grade: "E", points: 1 },
+  { min: 0,  grade: "F", points: 0 },
+];
+function gradeFromScore(score){
+  for(const b of GRADE_BANDS){ if(score >= b.min) return b; }
+  return GRADE_BANDS[GRADE_BANDS.length-1];
+}
+function classFromGPA(gpa){
+  if(gpa >= 4.5) return "First Class";
+  if(gpa >= 3.5) return "Second Class Upper";
+  if(gpa >= 2.5) return "Second Class Lower";
+  if(gpa >= 1.5) return "Third Class";
+  if(gpa >= 1.0) return "Pass Degree";
+  return "Below Pass";
+}
+
+// simple hash for password/security answer storage (not cryptographically
+// strong, but avoids storing raw plaintext directly)
+async function simpleHash(text){
+  const enc = new TextEncoder().encode(text.trim().toLowerCase());
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function fmtTime(totalSeconds){
+  const h = Math.floor(totalSeconds/3600);
+  const m = Math.floor((totalSeconds%3600)/60);
+  const s = totalSeconds%60;
+  if(h > 0) return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  return `${m}:${String(s).padStart(2,"0")}`;
+}
+
+async function uploadImage(file){
+  if(!file) return null;
+  const ext = file.name.split(".").pop();
+  const path = `uploads/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+  const { error } = await sb.storage.from("app-images").upload(path, file);
+  if(error){ console.error(error); return null; }
+  const { data } = sb.storage.from("app-images").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// =====================================================================
+// ROOT APP
+// =====================================================================
+function App(){
+  const [user, setUser] = useState(null);
+  const [screen, setScreen] = useState("login"); // login | register | forgot | home | ...
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(()=>{
+    const saved = localStorage.getItem("cbt_user");
+    if(saved){
+      try{ setUser(JSON.parse(saved)); setScreen("home"); }catch(e){}
+    }
+  },[]);
+
+  function loginSuccess(u){
+    setUser(u);
+    localStorage.setItem("cbt_user", JSON.stringify(u));
+    setScreen("home");
+  }
+  function logout(){
+    setUser(null);
+    setIsAdmin(false);
+    localStorage.removeItem("cbt_user");
+    setScreen("login");
+  }
+
+  if(!user){
+    if(screen === "register") return <RegisterScreen onDone={()=>setScreen("login")} onBack={()=>setScreen("login")} />;
+    if(screen === "forgot") return <ForgotPasswordScreen onBack={()=>setScreen("login")} />;
+    return <LoginScreen onLogin={loginSuccess} onGoRegister={()=>setScreen("register")} onGoForgot={()=>setScreen("forgot")} />;
+  }
+
+  return <MainApp user={user} onLogout={logout} isAdmin={isAdmin} setIsAdmin={setIsAdmin} />;
+}
+
+// =====================================================================
+// AUTH SCREENS
+// =====================================================================
+const SECURITY_QUESTIONS = [
+  "What is your mother's maiden name?",
+  "What was the name of your first school?",
+  "What is your favorite subject?",
+  "What city were you born in?",
+  "What is your best friend's first name?",
+];
+
+function LoginScreen({ onLogin, onGoRegister, onGoForgot }){
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [err,setErr] = useState("");
+  const [loading,setLoading] = useState(false);
+
+  async function handleSubmit(e){
+    e.preventDefault();
+    setErr(""); setLoading(true);
+    try{
+      const { data, error } = await sb.from("app_users").select("*").eq("email", email.trim().toLowerCase()).maybeSingle();
+      if(error) throw error;
+      if(!data){ setErr("No account found with that email."); setLoading(false); return; }
+      const hash = await simpleHash(password);
+      if(hash !== data.password_hash){ setErr("Incorrect password."); setLoading(false); return; }
+      onLogin({ id:data.id, full_name:data.full_name, email:data.email, phone:data.phone });
+    }catch(ex){
+      setErr("Something went wrong logging in. Please try again.");
+      console.error(ex);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="center-screen">
+      <div className="card auth-card">
+        <div className="eyebrow">Year 1 · Second Semester</div>
+        <h1>Practice App</h1>
+        <p className="muted">Sign in to continue your revision.</p>
+        {err && <div className="error-box">{err}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label>Email</label>
+            <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" />
+          </div>
+          <button type="submit" className="btn-primary" style={{width:"100%"}} disabled={loading}>
+            {loading ? <span className="spinner"></span> : "Sign in"}
+          </button>
+        </form>
+        <div className="divider"></div>
+        <div className="flex-between">
+          <button className="btn-ghost" onClick={onGoForgot}>Forgot password?</button>
+          <button className="btn-ghost" onClick={onGoRegister}>Create account</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RegisterScreen({ onDone, onBack }){
+  const [form,setForm] = useState({
+    full_name:"", email:"", phone:"", password:"", confirm:"",
+    security_question: SECURITY_QUESTIONS[0], security_answer:""
+  });
+  const [err,setErr] = useState("");
+  const [loading,setLoading] = useState(false);
+
+  function update(field,val){ setForm(f=>({...f,[field]:val})); }
+
+  async function handleSubmit(e){
+    e.preventDefault();
+    setErr("");
+    if(form.password.length < 4){ setErr("Password should be at least 4 characters."); return; }
+    if(form.password !== form.confirm){ setErr("Passwords do not match."); return; }
+    if(!form.security_answer.trim()){ setErr("Please answer the security question."); return; }
+    setLoading(true);
+    try{
+      const { data: existing } = await sb.from("app_users").select("id").eq("email", form.email.trim().toLowerCase()).maybeSingle();
+      if(existing){ setErr("An account with that email already exists."); setLoading(false); return; }
+      const password_hash = await simpleHash(form.password);
+      const security_answer_hash = await simpleHash(form.security_answer);
+      const { error } = await sb.from("app_users").insert({
+        full_name: form.full_name.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        password_hash,
+        security_question: form.security_question,
+        security_answer_hash
+      });
+      if(error) throw error;
+      onDone();
+    }catch(ex){
+      setErr("Could not create account. Please try again.");
+      console.error(ex);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="center-screen">
+      <div className="card auth-card">
+        <div className="eyebrow">Create account</div>
+        <h1>Join the practice app</h1>
+        {err && <div className="error-box">{err}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label>Full name</label>
+            <input required value={form.full_name} onChange={e=>update("full_name",e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Email</label>
+            <input type="email" required value={form.email} onChange={e=>update("email",e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Phone number</label>
+            <input required value={form.phone} onChange={e=>update("phone",e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input type="password" required value={form.password} onChange={e=>update("password",e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Confirm password</label>
+            <input type="password" required value={form.confirm} onChange={e=>update("confirm",e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Security question (used to reset your password)</label>
+            <select value={form.security_question} onChange={e=>update("security_question",e.target.value)}>
+              {SECURITY_QUESTIONS.map(q=> <option key={q} value={q}>{q}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Your answer</label>
+            <input required value={form.security_answer} onChange={e=>update("security_answer",e.target.value)} />
+          </div>
+          <button type="submit" className="btn-primary" style={{width:"100%"}} disabled={loading}>
+            {loading ? <span className="spinner"></span> : "Create account"}
+          </button>
+        </form>
+        <div className="divider"></div>
+        <button className="btn-ghost" onClick={onBack}>Back to sign in</button>
+      </div>
+    </div>
+  );
+}
+
+function ForgotPasswordScreen({ onBack }){
+  const [step,setStep] = useState(1);
+  const [email,setEmail] = useState("");
+  const [userRec,setUserRec] = useState(null);
+  const [answer,setAnswer] = useState("");
+  const [newPassword,setNewPassword] = useState("");
+  const [confirm,setConfirm] = useState("");
+  const [err,setErr] = useState("");
+  const [success,setSuccess] = useState("");
+  const [loading,setLoading] = useState(false);
+
+  async function findUser(e){
+    e.preventDefault(); setErr(""); setLoading(true);
+    const { data, error } = await sb.from("app_users").select("*").eq("email", email.trim().toLowerCase()).maybeSingle();
+    setLoading(false);
+    if(error || !data){ setErr("No account found with that email."); return; }
+    setUserRec(data);
+    setStep(2);
+  }
+
+  async function checkAnswer(e){
+    e.preventDefault(); setErr(""); setLoading(true);
+    const hash = await simpleHash(answer);
+    setLoading(false);
+    if(hash !== userRec.security_answer_hash){ setErr("That answer doesn't match our records."); return; }
+    setStep(3);
+  }
+
+  async function resetPassword(e){
+    e.preventDefault(); setErr("");
+    if(newPassword.length < 4){ setErr("Password should be at least 4 characters."); return; }
+    if(newPassword !== confirm){ setErr("Passwords do not match."); return; }
+    setLoading(true);
+    const password_hash = await simpleHash(newPassword);
+    const { error } = await sb.from("app_users").update({ password_hash }).eq("id", userRec.id);
+    setLoading(false);
+    if(error){ setErr("Could not reset password. Try again."); return; }
+    setSuccess("Password reset. You can sign in now.");
+  }
+
+  return (
+    <div className="center-screen">
+      <div className="card auth-card">
+        <div className="eyebrow">Account recovery</div>
+        <h1>Reset password</h1>
+        {err && <div className="error-box">{err}</div>}
+        {success && <div className="success-box">{success}</div>}
+        {!success && step===1 && (
+          <form onSubmit={findUser}>
+            <div className="field"><label>Email</label><input type="email" required value={email} onChange={e=>setEmail(e.target.value)} /></div>
+            <button className="btn-primary" style={{width:"100%"}} disabled={loading}>{loading?<span className="spinner"></span>:"Continue"}</button>
+          </form>
+        )}
+        {!success && step===2 && (
+          <form onSubmit={checkAnswer}>
+            <p><strong>{userRec.security_question}</strong></p>
+            <div className="field"><label>Your answer</label><input required value={answer} onChange={e=>setAnswer(e.target.value)} /></div>
+            <button className="btn-primary" style={{width:"100%"}} disabled={loading}>{loading?<span className="spinner"></span>:"Verify"}</button>
+          </form>
+        )}
+        {!success && step===3 && (
+          <form onSubmit={resetPassword}>
+            <div className="field"><label>New password</label><input type="password" required value={newPassword} onChange={e=>setNewPassword(e.target.value)} /></div>
+            <div className="field"><label>Confirm new password</label><input type="password" required value={confirm} onChange={e=>setConfirm(e.target.value)} /></div>
+            <button className="btn-primary" style={{width:"100%"}} disabled={loading}>{loading?<span className="spinner"></span>:"Reset password"}</button>
+          </form>
+        )}
+        <div className="divider"></div>
+        <button className="btn-ghost" onClick={onBack}>Back to sign in</button>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// MAIN APP SHELL
+// =====================================================================
+function MainApp({ user, onLogout, isAdmin, setIsAdmin }){
+  const [view, setView] = useState("home");
+  // view: home | objective_practice | essay_practice | general_practice | flashcards | notes | history | admin
+
+  function goHome(){ setView("home"); }
+
+  return (
+    <div className="app-shell">
+      <div className="topbar">
+        <div className="brand"><span className="mark">Y1</span> Practice App</div>
+        <nav>
+          <button className="btn-ghost" style={{color:"#f7f5ef"}} onClick={goHome}>Home</button>
+          <button className="btn-ghost" style={{color:"#f7f5ef"}} onClick={()=>setView("notes")}>Notes</button>
+          <button className="btn-ghost" style={{color:"#f7f5ef"}} onClick={()=>setView("history")}>History</button>
+          <button className="btn-ghost" style={{color:"#f7f5ef"}} onClick={()=>setView("admin")}>Admin</button>
+          <button className="btn-secondary" onClick={onLogout}>Sign out</button>
+        </nav>
+      </div>
+      <div className="main">
+        {view==="home" && <HomeScreen user={user} onSelect={setView} />}
+        {view==="objective_practice" && <ObjectivePracticeFlow user={user} onExit={goHome} />}
+        {view==="essay_practice" && <EssayPracticeFlow user={user} onExit={goHome} />}
+        {view==="general_practice" && <GeneralPracticeFlow user={user} onExit={goHome} />}
+        {view==="flashcards" && <FlashcardsScreen user={user} onExit={goHome} />}
+        {view==="notes" && <NotesScreen user={user} onExit={goHome} />}
+        {view==="history" && <HistoryScreen user={user} onExit={goHome} />}
+        {view==="admin" && <AdminGate isAdmin={isAdmin} setIsAdmin={setIsAdmin} onExit={goHome} />}
+      </div>
+    </div>
+  );
+}
+
+function HomeScreen({ user, onSelect }){
+  return (
+    <div>
+      <div className="eyebrow">Welcome back</div>
+      <h1>{user.full_name.split(" ")[0]}, ready to revise?</h1>
+      <p className="muted">Choose a mode below. Your CA score, timers, and grading all follow what your lecturer set up.</p>
+
+      <div className="card-grid grid-2" style={{marginTop:"1.6em"}}>
+        <div className="card mode-card" onClick={()=>onSelect("objective_practice")}>
+          <div className="num">01</div>
+          <h3>Objective Practice</h3>
+          <p className="muted">Pick one subject, choose topics, answer 50 or 100 questions. Add your CA score if you have it.</p>
+          <span className="tag">MTH · PHY · CHM · BIO · GES · CND</span>
+        </div>
+        <div className="card mode-card" onClick={()=>onSelect("essay_practice")}>
+          <div className="num">02</div>
+          <h3>Essay Practice</h3>
+          <p className="muted">8 questions, answer any 5. Pick 2–5 likely answers per question — choose carefully, wrong picks cost marks.</p>
+          <span className="tag">MLS 102 · MLS 104</span>
+        </div>
+        <div className="card mode-card" onClick={()=>onSelect("general_practice")}>
+          <div className="num">03</div>
+          <h3>General Practice (Full Exam)</h3>
+          <p className="muted">All 8 subjects in one sitting, 8 hours. Get a full GPA breakdown at the end, ready to print or save as PDF.</p>
+          <span className="tag">Full simulation</span>
+        </div>
+        <div className="card mode-card" onClick={()=>onSelect("flashcards")}>
+          <div className="num">04</div>
+          <h3>Flashcards</h3>
+          <p className="muted">Quick topic-by-topic recall. Earn points as you go.</p>
+          <span className="tag">By topic</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// OBJECTIVE PRACTICE MODE
+// =====================================================================
+const OBJECTIVE_SUBJECT_CODES = ["MTH102","PHY102","CHM102","BIO102","GES102","CND102"];
+
+function ObjectivePracticeFlow({ user, onExit }){
+  const [stage, setStage] = useState("setup"); // setup | exam | results
+  const [config, setConfig] = useState(null);
+  const [result, setResult] = useState(null);
+
+  if(stage==="setup") return <ObjectiveSetup onStart={(cfg)=>{ setConfig(cfg); setStage("exam"); }} onExit={onExit} />;
+  if(stage==="exam") return <ObjectiveExam config={config} user={user} onFinish={(res)=>{ setResult(res); setStage("results"); }} />;
+  if(stage==="results") return <ObjectiveResults result={result} config={config} onExit={onExit} />;
+}
+
+function ObjectiveSetup({ onStart, onExit }){
+  const [subjects,setSubjects] = useState([]);
+  const [topics,setTopics] = useState([]);
+  const [subjectId,setSubjectId] = useState("");
+  const [selectedTopics,setSelectedTopics] = useState([]); // empty = all topics
+  const [questionCount,setQuestionCount] = useState(50);
+  const [hasCA,setHasCA] = useState(false);
+  const [caScore,setCaScore] = useState("");
+  const [loading,setLoading] = useState(true);
+  const [err,setErr] = useState("");
+
+  useEffect(()=>{
+    (async()=>{
+      const { data, error } = await sb.from("subjects").select("*").eq("type","objective").in("code", OBJECTIVE_SUBJECT_CODES).order("code");
+      if(!error) setSubjects(data || []);
+      setLoading(false);
+    })();
+  },[]);
+
+  useEffect(()=>{
+    if(!subjectId){ setTopics([]); setSelectedTopics([]); return; }
+    (async()=>{
+      const { data } = await sb.from("topics").select("*").eq("subject_id", subjectId).order("name");
+      setTopics(data || []);
+      setSelectedTopics([]);
+    })();
+  },[subjectId]);
+
+  function toggleTopic(id){
+    setSelectedTopics(prev => prev.includes(id) ? prev.filter(t=>t!==id) : [...prev, id]);
+  }
+
+  async function handleStart(){
+    setErr("");
+    if(!subjectId){ setErr("Please choose a subject."); return; }
+    if(hasCA){
+      const ca = parseFloat(caScore);
+      if(isNaN(ca) || ca < 0 || ca > 30){ setErr("CA score should be a number between 0 and 30."); return; }
+    }
+    // pull questions
+    let query = sb.from("objective_questions").select("*").eq("subject_id", subjectId);
+    if(selectedTopics.length > 0) query = query.in("topic_id", selectedTopics);
+    const { data, error } = await query;
+    if(error){ setErr("Could not load questions."); return; }
+    if(!data || data.length === 0){ setErr("No questions found for this subject/topic selection yet."); return; }
+    const shuffled = [...data].sort(()=>Math.random()-0.5);
+    const picked = shuffled.slice(0, Math.min(questionCount, shuffled.length));
+    const subj = subjects.find(s=>s.id===subjectId);
+    const durationSeconds = questionCount === 50 ? 30*60 : 60*60;
+    onStart({
+      subject: subj,
+      questions: picked,
+      durationSeconds,
+      hasCA,
+      caScore: hasCA ? parseFloat(caScore) : null
+    });
+  }
+
+  if(loading) return <div className="empty-state"><span className="spinner"></span></div>;
+
+  return (
+    <div>
+      <button className="btn-ghost" onClick={onExit}>← Back</button>
+      <h1>Objective Practice</h1>
+      <p className="muted">Choose a subject, narrow by topic if you like, then set how many questions you want.</p>
+      {err && <div className="error-box">{err}</div>}
+
+      <div className="card">
+        <div className="field">
+          <label>Subject</label>
+          <select value={subjectId} onChange={e=>setSubjectId(e.target.value)}>
+            <option value="">Select a subject…</option>
+            {subjects.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+
+        {subjectId && topics.length > 0 && (
+          <div className="field">
+            <label>Topics (leave all unchecked to include every topic)</label>
+            <div className="flex-row">
+              {topics.map(t=>(
+                <span key={t.id} className={"subject-pill" + (selectedTopics.includes(t.id)?" active":"")} onClick={()=>toggleTopic(t.id)}>
+                  {t.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="field">
+          <label>How many questions?</label>
+          <div className="flex-row">
+            <label style={{display:"flex",alignItems:"center",gap:".4em",fontWeight:400,color:"var(--ink)"}}>
+              <input type="radio" style={{width:"auto"}} checked={questionCount===50} onChange={()=>setQuestionCount(50)} /> 50 questions (30 minutes)
+            </label>
+            <label style={{display:"flex",alignItems:"center",gap:".4em",fontWeight:400,color:"var(--ink)"}}>
+              <input type="radio" style={{width:"auto"}} checked={questionCount===100} onChange={()=>setQuestionCount(100)} /> 100 questions (60 minutes)
+            </label>
+          </div>
+        </div>
+
+        <div className="field">
+          <label style={{display:"flex",alignItems:"center",gap:".5em"}}>
+            <input type="checkbox" style={{width:"auto"}} checked={hasCA} onChange={e=>setHasCA(e.target.checked)} />
+            I have a CA score to add (out of 30)
+          </label>
+          {hasCA && (
+            <input type="number" min="0" max="30" placeholder="e.g. 24" value={caScore} onChange={e=>setCaScore(e.target.value)} style={{marginTop:".5em"}} />
+          )}
+          <p className="muted" style={{fontSize:".82rem",marginTop:".4em"}}>
+            {hasCA ? "Your exam will be graded over 70, then added to your CA to give a score over 100." : "No CA? Your exam will be graded over 100 on its own."}
+          </p>
+        </div>
+
+        <button className="btn-primary" onClick={handleStart}>Start practice</button>
+      </div>
+    </div>
+  );
+}
+
+function ObjectiveExam({ config, user, onFinish }){
+  const { subject, questions, durationSeconds, hasCA, caScore } = config;
+  const [answers,setAnswers] = useState({}); // questionId -> 'A'/'B'/...
+  const [timeLeft,setTimeLeft] = useState(durationSeconds);
+  const [current,setCurrent] = useState(0);
+  const submittedRef = useRef(false);
+
+  const handleSubmit = useCallback(async ()=>{
+    if(submittedRef.current) return;
+    submittedRef.current = true;
+    let correctCount = 0;
+    const responses = questions.map(q=>{
+      const sel = answers[q.id];
+      const isCorrect = sel === q.correct_option;
+      if(isCorrect) correctCount++;
+      return { question_type:"objective", question_id:q.id, selected_option: sel || null, is_correct: isCorrect, marks_awarded: isCorrect?1:0 };
+    });
+    const rawPct = (correctCount/questions.length)*100;
+    let examScore, finalScore;
+    if(hasCA){
+      examScore = (rawPct/100)*70;
+      finalScore = examScore + caScore;
+    } else {
+      examScore = rawPct;
+      finalScore = rawPct;
+    }
+    const band = gradeFromScore(finalScore);
+    const { data: attempt, error } = await sb.from("attempts").insert({
+      user_id:user.id, mode:"objective_practice", subject_id:subject.id,
+      ca_score: hasCA?caScore:null, total_score: Math.round(finalScore*100)/100, max_score:100,
+      grade: band.grade, submitted_at: new Date().toISOString(),
+      duration_seconds: durationSeconds - timeLeft
+    }).select().single();
+    if(!error && attempt){
+      const rows = responses.map(r=>({...r, attempt_id: attempt.id}));
+      await sb.from("attempt_responses").insert(rows);
+    }
+    onFinish({ score: Math.round(finalScore*100)/100, grade: band.grade, correctCount, total: questions.length, questions, answers, hasCA, caScore, examScoreRaw: Math.round(examScore*100)/100 });
+  },[answers, questions, hasCA, caScore, subject, user, durationSeconds, timeLeft, onFinish]);
+
+  useEffect(()=>{
+    if(timeLeft <= 0){ handleSubmit(); return; }
+    const t = setTimeout(()=>setTimeLeft(s=>s-1), 1000);
+    return ()=>clearTimeout(t);
+  },[timeLeft, handleSubmit]);
+
+  const q = questions[current];
+  const options = [["A",q.option_a],["B",q.option_b],["C",q.option_c],["D",q.option_d]];
+  if(q.option_e) options.push(["E", q.option_e]);
+
+  return (
+    <div>
+      <div className="flex-between no-print">
+        <h2 style={{margin:0}}>{subject.name} — Objective Practice</h2>
+        <span className={"timer-badge" + (timeLeft<60?" low":"")}>{fmtTime(timeLeft)}</span>
+      </div>
+      <p className="muted">Question {current+1} of {questions.length}</p>
+
+      <div className="card">
+        <p style={{fontWeight:600,fontSize:"1.05rem"}}>{q.question_text}</p>
+        {q.image_url && <img className="q-image" src={q.image_url} alt="question diagram" />}
+        {options.map(([label,text])=>(
+          <div key={label} className={"option-row" + (answers[q.id]===label?" selected":"")}
+               onClick={()=>setAnswers(a=>({...a,[q.id]:label}))}>
+            <input type="radio" readOnly checked={answers[q.id]===label} />
+            <span><strong>{label}.</strong> {text}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex-between">
+        <button className="btn-secondary" disabled={current===0} onClick={()=>setCurrent(c=>c-1)}>← Previous</button>
+        <div className="flex-row" style={{flexWrap:"wrap",maxWidth:"60%",justifyContent:"center"}}>
+          {questions.map((qq,i)=>(
+            <span key={qq.id} onClick={()=>setCurrent(i)}
+              style={{
+                width:"28px",height:"28px",borderRadius:"6px",display:"flex",alignItems:"center",justifyContent:"center",
+                cursor:"pointer",fontSize:".78rem",fontWeight:700,
+                background: answers[qq.id] ? "var(--accent)" : "#fff",
+                color: answers[qq.id] ? "#fff":"var(--ink)",
+                border:"1px solid var(--line)"
+              }}>{i+1}</span>
+          ))}
+        </div>
+        {current < questions.length-1
+          ? <button className="btn-secondary" onClick={()=>setCurrent(c=>c+1)}>Next →</button>
+          : <button className="btn-primary" onClick={handleSubmit}>Submit</button>}
+      </div>
+    </div>
+  );
+}
+
+function ObjectiveResults({ result, config, onExit }){
+  const { score, grade, correctCount, total, questions, answers, hasCA, caScore, examScoreRaw } = result;
+  return (
+    <div>
+      <h1>Result — {config.subject.name}</h1>
+      <div className="card">
+        <div className="card-grid grid-3">
+          <div><div className="eyebrow">Score</div><h2>{score} / 100</h2></div>
+          <div><div className="eyebrow">Grade</div><h2>{grade}</h2></div>
+          <div><div className="eyebrow">Correct</div><h2>{correctCount} / {total}</h2></div>
+        </div>
+        {hasCA && <p className="muted">Exam graded over 70: {examScoreRaw}, plus CA: {caScore} = {score}</p>}
+      </div>
+
+      <h3>Review</h3>
+      {questions.map((q,i)=>{
+        const sel = answers[q.id];
+        const options = [["A",q.option_a],["B",q.option_b],["C",q.option_c],["D",q.option_d]];
+        if(q.option_e) options.push(["E", q.option_e]);
+        return (
+          <div key={q.id} className="card question-block">
+            <p style={{fontWeight:600}}>{i+1}. {q.question_text}</p>
+            {q.image_url && <img className="q-image" src={q.image_url} alt="" />}
+            {options.map(([label,text])=>{
+              let cls = "option-row";
+              if(label===q.correct_option) cls += " correct";
+              else if(label===sel) cls += " incorrect";
+              return <div key={label} className={cls}><span><strong>{label}.</strong> {text}</span></div>;
+            })}
+            {!sel && <p className="muted" style={{fontSize:".85rem"}}>You did not answer this question.</p>}
+            {q.explanation && <p className="muted" style={{fontSize:".88rem",marginTop:".5em"}}><strong>Explanation:</strong> {q.explanation}</p>}
+          </div>
+        );
+      })}
+      <button className="btn-primary" onClick={onExit}>Back to home</button>
+    </div>
+  );
+}
+
+// =====================================================================
+// ESSAY PRACTICE MODE  (8 questions given, answer any 5; pick 2-5 of 10
+// options per question; wrong pick = -2 from that question's earned marks)
+// =====================================================================
+const ESSAY_SUBJECT_CODES = ["MLS102","MLS104"];
+
+function EssayPracticeFlow({ user, onExit }){
+  const [stage, setStage] = useState("setup");
+  const [config, setConfig] = useState(null);
+  const [result, setResult] = useState(null);
+
+  if(stage==="setup") return <EssaySetup onStart={(cfg)=>{ setConfig(cfg); setStage("exam"); }} onExit={onExit} />;
+  if(stage==="exam") return <EssayExam config={config} user={user} onFinish={(res)=>{ setResult(res); setStage("results"); }} />;
+  if(stage==="results") return <EssayResults result={result} config={config} onExit={onExit} />;
+}
+
+function EssaySetup({ onStart, onExit }){
+  const [subjects,setSubjects] = useState([]);
+  const [subjectId,setSubjectId] = useState("");
+  const [loading,setLoading] = useState(true);
+  const [err,setErr] = useState("");
+
+  useEffect(()=>{
+    (async()=>{
+      const { data } = await sb.from("subjects").select("*").eq("type","essay").in("code", ESSAY_SUBJECT_CODES).order("code");
+      setSubjects(data || []);
+      setLoading(false);
+    })();
+  },[]);
+
+  async function handleStart(){
+    setErr("");
+    if(!subjectId){ setErr("Please choose a subject."); return; }
+    const { data: qs, error } = await sb.from("essay_questions").select("*, essay_answer_options(*)").eq("subject_id", subjectId);
+    if(error){ setErr("Could not load questions."); return; }
+    if(!qs || qs.length < 1){ setErr("No essay questions found for this subject yet."); return; }
+    const shuffled = [...qs].sort(()=>Math.random()-0.5);
+    const picked = shuffled.slice(0, Math.min(8, shuffled.length));
+    const subj = subjects.find(s=>s.id===subjectId);
+    onStart({ subject: subj, questions: picked, durationSeconds: 60*60 });
+  }
+
+  if(loading) return <div className="empty-state"><span className="spinner"></span></div>;
+
+  return (
+    <div>
+      <button className="btn-ghost" onClick={onExit}>← Back</button>
+      <h1>Essay Practice</h1>
+      <p className="muted">You'll get 8 questions and must answer any 5. For each, pick between 2 and 5 of the 10 likely answers shown — choose carefully, since an incorrect pick costs 2 marks from that question.</p>
+      {err && <div className="error-box">{err}</div>}
+      <div className="card">
+        <div className="field">
+          <label>Subject</label>
+          <select value={subjectId} onChange={e=>setSubjectId(e.target.value)}>
+            <option value="">Select a subject…</option>
+            {subjects.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <button className="btn-primary" onClick={handleStart}>Start practice (60 minutes)</button>
+      </div>
+    </div>
+  );
+}
+
+function EssayExam({ config, user, onFinish }){
+  const { subject, questions, durationSeconds } = config;
+  const [answeredSet,setAnsweredSet] = useState([]); // ids of questions the user chose to answer (max 5)
+  const [picks,setPicks] = useState({}); // questionId -> [optionId,...]
+  const [timeLeft,setTimeLeft] = useState(durationSeconds);
+  const [current,setCurrent] = useState(0);
+  const [err,setErr] = useState("");
+  const submittedRef = useRef(false);
+
+  function toggleAnswerThis(qId){
+    setAnsweredSet(prev=>{
+      if(prev.includes(qId)) return prev.filter(x=>x!==qId);
+      if(prev.length >= 5){ setErr("You can only answer 5 questions. Unselect one to choose another."); return prev; }
+      setErr("");
+      return [...prev, qId];
+    });
+  }
+
+  function togglePick(qId, optId){
+    setPicks(prev=>{
+      const current = prev[qId] || [];
+      let next;
+      if(current.includes(optId)) next = current.filter(x=>x!==optId);
+      else {
+        if(current.length >= 5) return prev; // max 5
+        next = [...current, optId];
+      }
+      return {...prev, [qId]: next};
+    });
+  }
+
+  const handleSubmit = useCallback(async ()=>{
+    if(submittedRef.current) return;
+    submittedRef.current = true;
+    const toGrade = answeredSet.length > 0 ? answeredSet : questions.slice(0,5).map(q=>q.id);
+    let totalMarks = 0, maxMarks = 0;
+    const responses = [];
+    questions.forEach(q=>{
+      if(!toGrade.includes(q.id)) return;
+      const chosenIds = picks[q.id] || [];
+      const opts = q.essay_answer_options || [];
+      const maxForQuestion = opts.reduce((sum,o)=>sum + (o.mark_value>0?o.mark_value:0), 0);
+      maxMarks += maxForQuestion;
+      let earned = 0;
+      chosenIds.forEach(optId=>{
+        const opt = opts.find(o=>o.id===optId);
+        if(!opt) return;
+        if(opt.mark_value > 0) earned += opt.mark_value;
+        else earned -= 2; // wrong pick penalty
+      });
+      if(earned < 0) earned = 0;
+      totalMarks += earned;
+      responses.push({ question_type:"essay", question_id:q.id, selected_essay_option_ids: chosenIds, is_correct: earned>=maxForQuestion, marks_awarded: earned });
+    });
+    const pct = maxMarks > 0 ? (totalMarks/maxMarks)*100 : 0;
+    const band = gradeFromScore(pct);
+    const { data: attempt, error } = await sb.from("attempts").insert({
+      user_id:user.id, mode:"essay_practice", subject_id:subject.id,
+      total_score: Math.round(pct*100)/100, max_score:100, grade: band.grade,
+      submitted_at: new Date().toISOString(), duration_seconds: durationSeconds-timeLeft
+    }).select().single();
+    if(!error && attempt){
+      const rows = responses.map(r=>({...r, attempt_id: attempt.id}));
+      await sb.from("attempt_responses").insert(rows);
+    }
+    onFinish({ score: Math.round(pct*100)/100, grade: band.grade, totalMarks, maxMarks, gradedIds: toGrade, picks, questions });
+  },[answeredSet, picks, questions, subject, user, durationSeconds, timeLeft, onFinish]);
+
+  useEffect(()=>{
+    if(timeLeft<=0){ handleSubmit(); return; }
+    const t = setTimeout(()=>setTimeLeft(s=>s-1),1000);
+    return ()=>clearTimeout(t);
+  },[timeLeft, handleSubmit]);
+
+  const q = questions[current];
+  const isAnswering = answeredSet.includes(q.id);
+  const myPicks = picks[q.id] || [];
+
+  return (
+    <div>
+      <div className="flex-between no-print">
+        <h2 style={{margin:0}}>{subject.name} — Essay Practice</h2>
+        <span className={"timer-badge"+(timeLeft<60?" low":"")}>{fmtTime(timeLeft)}</span>
+      </div>
+      <p className="muted">Question {current+1} of {questions.length} · Answering {answeredSet.length}/5</p>
+      {err && <div className="error-box">{err}</div>}
+
+      <div className="card">
+        <div className="flex-between">
+          <p style={{fontWeight:600,fontSize:"1.05rem",flex:1}}>{q.question_text}</p>
+          <button className={isAnswering?"btn-primary":"btn-secondary"} onClick={()=>toggleAnswerThis(q.id)}>
+            {isAnswering ? "Answering this ✓" : "Answer this question"}
+          </button>
+        </div>
+        {q.image_url && <img className="q-image" src={q.image_url} alt="" />}
+        {isAnswering && (
+          <div style={{marginTop:"1em"}}>
+            <p className="muted" style={{fontSize:".85rem"}}>Pick 2–5 of the likely answers below ({myPicks.length} selected). Unsure ones are safest left unchosen.</p>
+            {(q.essay_answer_options||[]).slice().sort((a,b)=>a.option_label-b.option_label).map(opt=>(
+              <div key={opt.id} className={"option-row"+(myPicks.includes(opt.id)?" selected":"")} onClick={()=>togglePick(q.id, opt.id)}>
+                <input type="checkbox" readOnly checked={myPicks.includes(opt.id)} />
+                <span>{opt.option_text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-between">
+        <button className="btn-secondary" disabled={current===0} onClick={()=>setCurrent(c=>c-1)}>← Previous</button>
+        <div className="flex-row" style={{flexWrap:"wrap"}}>
+          {questions.map((qq,i)=>(
+            <span key={qq.id} onClick={()=>setCurrent(i)}
+              style={{
+                width:"28px",height:"28px",borderRadius:"6px",display:"flex",alignItems:"center",justifyContent:"center",
+                cursor:"pointer",fontSize:".78rem",fontWeight:700,
+                background: answeredSet.includes(qq.id) ? "var(--accent)" : "#fff",
+                color: answeredSet.includes(qq.id) ? "#fff":"var(--ink)",
+                border:"1px solid var(--line)"
+              }}>{i+1}</span>
+          ))}
+        </div>
+        {current < questions.length-1
+          ? <button className="btn-secondary" onClick={()=>setCurrent(c=>c+1)}>Next →</button>
+          : <button className="btn-primary" onClick={handleSubmit}>Submit</button>}
+      </div>
+    </div>
+  );
+}
+
+function EssayResults({ result, config, onExit }){
+  const { score, grade, totalMarks, maxMarks, gradedIds, picks, questions } = result;
+  return (
+    <div>
+      <h1>Result — {config.subject.name}</h1>
+      <div className="card">
+        <div className="card-grid grid-3">
+          <div><div className="eyebrow">Score</div><h2>{score} / 100</h2></div>
+          <div><div className="eyebrow">Grade</div><h2>{grade}</h2></div>
+          <div><div className="eyebrow">Marks</div><h2>{totalMarks} / {maxMarks}</h2></div>
+        </div>
+      </div>
+      <h3>Review</h3>
+      {questions.filter(q=>gradedIds.includes(q.id)).map((q,i)=>{
+        const myPicks = picks[q.id]||[];
+        return (
+          <div key={q.id} className="card question-block">
+            <p style={{fontWeight:600}}>{i+1}. {q.question_text}</p>
+            {q.image_url && <img className="q-image" src={q.image_url} alt="" />}
+            {(q.essay_answer_options||[]).slice().sort((a,b)=>a.option_label-b.option_label).map(opt=>{
+              let cls = "option-row";
+              const chosen = myPicks.includes(opt.id);
+              if(opt.mark_value>0) cls += " correct";
+              else if(chosen) cls += " incorrect";
+              return (
+                <div key={opt.id} className={cls}>
+                  <span>{opt.option_text} {opt.mark_value>0 ? `(+${opt.mark_value})` : (chosen ? "(-2, not credited)" : "")}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+      <button className="btn-primary" onClick={onExit}>Back to home</button>
+    </div>
+  );
+}
+
+// =====================================================================
+// GENERAL PRACTICE MODE (full simulation, all 8 subjects, 8 hours)
+// =====================================================================
+const ALL_SUBJECT_CODES = ["MLS102","MLS104","MTH102","PHY102","CHM102","BIO102","GES102","CND102"];
+
+function GeneralPracticeFlow({ user, onExit }){
+  const [stage,setStage] = useState("setup");
+  const [bundle,setBundle] = useState(null);
+  const [result,setResult] = useState(null);
+
+  if(stage==="setup") return <GeneralSetup onStart={(b)=>{setBundle(b); setStage("exam");}} onExit={onExit} />;
+  if(stage==="exam") return <GeneralExam bundle={bundle} user={user} onFinish={(r)=>{setResult(r); setStage("results");}} />;
+  if(stage==="results") return <GeneralResults result={result} user={user} onExit={onExit} />;
+}
+
+function GeneralSetup({ onStart, onExit }){
+  const [loading,setLoading] = useState(true);
+  const [err,setErr] = useState("");
+
+  async function load(){
+    setLoading(true); setErr("");
+    const { data: subjects, error } = await sb.from("subjects").select("*").in("code", ALL_SUBJECT_CODES).order("code");
+    if(error || !subjects){ setErr("Could not load subjects."); setLoading(false); return; }
+    const subjectData = [];
+    for(const subj of subjects){
+      if(subj.type === "objective"){
+        const { data: qs } = await sb.from("objective_questions").select("*").eq("subject_id", subj.id);
+        if(!qs || qs.length===0){ setErr(`No questions found for ${subj.name} yet.`); setLoading(false); return; }
+        const count = Math.min(subj.question_pool_size, qs.length);
+        const shuffled = [...qs].sort(()=>Math.random()-0.5).slice(0,count);
+        subjectData.push({ subject: subj, type:"objective", questions: shuffled });
+      } else {
+        const { data: qs } = await sb.from("essay_questions").select("*, essay_answer_options(*)").eq("subject_id", subj.id);
+        if(!qs || qs.length===0){ setErr(`No essay questions found for ${subj.name} yet.`); setLoading(false); return; }
+        const shuffled = [...qs].sort(()=>Math.random()-0.5).slice(0,8);
+        subjectData.push({ subject: subj, type:"essay", questions: shuffled });
+      }
+    }
+    setLoading(false);
+    onStart({ subjectData, durationSeconds: 8*3600 });
+  }
+
+  useEffect(()=>{ load(); },[]);
+
+  return (
+    <div>
+      <button className="btn-ghost" onClick={onExit}>← Back</button>
+      <h1>General Practice — Full Exam</h1>
+      <p className="muted">All 8 subjects, 8 hours total. Objective subjects are graded over 100; essay subjects (MLS 102/104) use the same 8-answer-5, pick-2-to-5 format. Your GPA is calculated at the end.</p>
+      {err && <div className="error-box">{err}<br/><button className="btn-secondary" style={{marginTop:".6em"}} onClick={load}>Try again</button></div>}
+      {loading && !err && <div className="empty-state"><span className="spinner"></span><p>Preparing your exam…</p></div>}
+    </div>
+  );
+}
+
+function GeneralExam({ bundle, user, onFinish }){
+  const { subjectData, durationSeconds } = bundle;
+  const [subjIndex,setSubjIndex] = useState(0);
+  const [qIndex,setQIndex] = useState(0);
+  const [objAnswers,setObjAnswers] = useState({}); // questionId -> option
+  const [essayAnswered,setEssayAnswered] = useState({}); // subjId -> [qId,...]
+  const [essayPicks,setEssayPicks] = useState({}); // qId -> [optId,...]
+  const [timeLeft,setTimeLeft] = useState(durationSeconds);
+  const [err,setErr] = useState("");
+  const submittedRef = useRef(false);
+
+  const handleSubmit = useCallback(async ()=>{
+    if(submittedRef.current) return;
+    submittedRef.current = true;
+    const perSubject = [];
+    for(const sd of subjectData){
+      if(sd.type === "objective"){
+        let correct = 0;
+        sd.questions.forEach(q=>{ if(objAnswers[q.id]===q.correct_option) correct++; });
+        const pct = (correct/sd.questions.length)*100;
+        const band = gradeFromScore(pct);
+        perSubject.push({ subject: sd.subject, score: Math.round(pct*100)/100, grade: band.grade, points: band.points, creditUnit: sd.subject.credit_unit });
+      } else {
+        const ansIds = essayAnswered[sd.subject.id] || sd.questions.slice(0,5).map(q=>q.id);
+        let totalMarks=0, maxMarks=0;
+        sd.questions.forEach(q=>{
+          if(!ansIds.includes(q.id)) return;
+          const opts = q.essay_answer_options||[];
+          const maxQ = opts.reduce((s,o)=>s+(o.mark_value>0?o.mark_value:0),0);
+          maxMarks += maxQ;
+          let earned = 0;
+          (essayPicks[q.id]||[]).forEach(optId=>{
+            const opt = opts.find(o=>o.id===optId);
+            if(!opt) return;
+            if(opt.mark_value>0) earned += opt.mark_value; else earned -= 2;
+          });
+          if(earned<0) earned=0;
+          totalMarks += earned;
+        });
+        const pct = maxMarks>0 ? (totalMarks/maxMarks)*100 : 0;
+        const band = gradeFromScore(pct);
+        perSubject.push({ subject: sd.subject, score: Math.round(pct*100)/100, grade: band.grade, points: band.points, creditUnit: sd.subject.credit_unit });
+      }
+    }
+    const totalWeighted = perSubject.reduce((s,r)=>s+(r.points*r.creditUnit),0);
+    const totalCredits = perSubject.reduce((s,r)=>s+r.creditUnit,0);
+    const gpa = totalCredits>0 ? totalWeighted/totalCredits : 0;
+    const classOf = classFromGPA(gpa);
+
+    const { data: attempt } = await sb.from("attempts").insert({
+      user_id:user.id, mode:"general_practice", subject_id:null,
+      total_score: Math.round(gpa*100)/100, max_score:5, grade: classOf,
+      submitted_at: new Date().toISOString(), duration_seconds: durationSeconds-timeLeft,
+      details: { perSubject: perSubject.map(r=>({code:r.subject.code,name:r.subject.name,score:r.score,grade:r.grade,creditUnit:r.creditUnit})), gpa, classOf }
+    }).select().single();
+
+    onFinish({ perSubject, gpa: Math.round(gpa*100)/100, classOf, attemptId: attempt?.id, user });
+  },[subjectData, objAnswers, essayAnswered, essayPicks, user, durationSeconds, timeLeft, onFinish]);
+
+  useEffect(()=>{
+    if(timeLeft<=0){ handleSubmit(); return; }
+    const t = setTimeout(()=>setTimeLeft(s=>s-1),1000);
+    return ()=>clearTimeout(t);
+  },[timeLeft, handleSubmit]);
+
+  const sd = subjectData[subjIndex];
+  const q = sd.questions[qIndex];
+
+  function switchSubject(i){ setSubjIndex(i); setQIndex(0); setErr(""); }
+
+  function toggleAnswerThis(qId){
+    setEssayAnswered(prev=>{
+      const list = prev[sd.subject.id] || [];
+      let next;
+      if(list.includes(qId)) next = list.filter(x=>x!==qId);
+      else { if(list.length>=5){ setErr("You can only answer 5 questions for this subject."); return prev; } next=[...list,qId]; }
+      setErr("");
+      return {...prev, [sd.subject.id]: next};
+    });
+  }
+  function togglePick(qId, optId){
+    setEssayPicks(prev=>{
+      const cur = prev[qId]||[];
+      let next;
+      if(cur.includes(optId)) next = cur.filter(x=>x!==optId);
+      else { if(cur.length>=5) return prev; next=[...cur,optId]; }
+      return {...prev,[qId]:next};
+    });
+  }
+
+  return (
+    <div>
+      <div className="flex-between no-print">
+        <h2 style={{margin:0}}>General Practice — Full Exam</h2>
+        <span className={"timer-badge"+(timeLeft<300?" low":"")}>{fmtTime(timeLeft)}</span>
+      </div>
+      {err && <div className="error-box">{err}</div>}
+      <div className="flex-row" style={{margin:"1em 0",flexWrap:"wrap"}}>
+        {subjectData.map((s,i)=>(
+          <span key={s.subject.id} className={"subject-pill"+(i===subjIndex?" active":"")} onClick={()=>switchSubject(i)}>
+            {s.subject.code}
+          </span>
+        ))}
+      </div>
+
+      <div className="card">
+        <p className="muted">{sd.subject.name} · Question {qIndex+1} of {sd.questions.length}</p>
+        {sd.type === "objective" ? (
+          <>
+            <p style={{fontWeight:600,fontSize:"1.05rem"}}>{q.question_text}</p>
+            {q.image_url && <img className="q-image" src={q.image_url} alt="" />}
+            {[["A",q.option_a],["B",q.option_b],["C",q.option_c],["D",q.option_d], ...(q.option_e?[["E",q.option_e]]:[])].map(([label,text])=>(
+              <div key={label} className={"option-row"+(objAnswers[q.id]===label?" selected":"")} onClick={()=>setObjAnswers(a=>({...a,[q.id]:label}))}>
+                <input type="radio" readOnly checked={objAnswers[q.id]===label} />
+                <span><strong>{label}.</strong> {text}</span>
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <div className="flex-between">
+              <p style={{fontWeight:600,fontSize:"1.05rem",flex:1}}>{q.question_text}</p>
+              <button className={(essayAnswered[sd.subject.id]||[]).includes(q.id)?"btn-primary":"btn-secondary"} onClick={()=>toggleAnswerThis(q.id)}>
+                {(essayAnswered[sd.subject.id]||[]).includes(q.id) ? "Answering this ✓" : "Answer this question"}
+              </button>
+            </div>
+            {q.image_url && <img className="q-image" src={q.image_url} alt="" />}
+            {(essayAnswered[sd.subject.id]||[]).includes(q.id) && (
+              <div style={{marginTop:"1em"}}>
+                <p className="muted" style={{fontSize:".85rem"}}>Pick 2–5 likely answers ({(essayPicks[q.id]||[]).length} selected).</p>
+                {(q.essay_answer_options||[]).slice().sort((a,b)=>a.option_label-b.option_label).map(opt=>(
+                  <div key={opt.id} className={"option-row"+((essayPicks[q.id]||[]).includes(opt.id)?" selected":"")} onClick={()=>togglePick(q.id,opt.id)}>
+                    <input type="checkbox" readOnly checked={(essayPicks[q.id]||[]).includes(opt.id)} />
+                    <span>{opt.option_text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="flex-between">
+        <button className="btn-secondary" disabled={qIndex===0} onClick={()=>setQIndex(i=>i-1)}>← Previous</button>
+        <span className="muted">{sd.subject.code} progress: {qIndex+1}/{sd.questions.length}</span>
+        {qIndex < sd.questions.length-1
+          ? <button className="btn-secondary" onClick={()=>setQIndex(i=>i+1)}>Next →</button>
+          : (subjIndex < subjectData.length-1
+              ? <button className="btn-secondary" onClick={()=>switchSubject(subjIndex+1)}>Next subject →</button>
+              : <button className="btn-primary" onClick={handleSubmit}>Submit full exam</button>)}
+      </div>
+    </div>
+  );
+}
+
+function GeneralResults({ result, user, onExit }){
+  const { perSubject, gpa, classOf } = result;
+  const totalWeighted = perSubject.reduce((s,r)=>s+(r.points*r.creditUnit),0);
+  const totalCredits = perSubject.reduce((s,r)=>s+r.creditUnit,0);
+
+  function handlePrint(){ window.print(); }
+
+  function handleSavePDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Year 1 Second Semester — Full Exam Result", 14, 18);
+    doc.setFontSize(11);
+    doc.text(`Name: ${user.full_name}`, 14, 28);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 35);
+
+    let y = 48;
+    doc.setFontSize(12);
+    doc.text("Subject", 14, y); doc.text("Credit Unit", 80, y); doc.text("Grade", 120, y); doc.text("Score", 150, y); doc.text("CU x Points", 175, y);
+    y += 6;
+    doc.setLineWidth(0.2); doc.line(14,y,196,y); y+=6;
+    perSubject.forEach(r=>{
+      doc.text(r.subject.name, 14, y);
+      doc.text(String(r.creditUnit), 80, y);
+      doc.text(r.grade, 120, y);
+      doc.text(String(r.score), 150, y);
+      doc.text(String(r.points*r.creditUnit), 175, y);
+      y += 7;
+    });
+    y += 4;
+    doc.line(14,y,196,y); y+=8;
+    doc.setFontSize(13);
+    doc.text(`GPA: ${gpa}`, 14, y); y+=8;
+    doc.text(`Classification: ${classOf}`, 14, y);
+    doc.save(`${user.full_name.replace(/\s+/g,"_")}_result.pdf`);
+  }
+
+  return (
+    <div>
+      <h1>Full Exam Result</h1>
+      <div className="card">
+        <p><strong>{user.full_name}</strong> · {new Date().toLocaleDateString()}</p>
+        <table>
+          <thead><tr><th>Subject</th><th>Credit Unit</th><th>Grade</th><th>Score</th><th>CU × Points</th></tr></thead>
+          <tbody>
+            {perSubject.map(r=>(
+              <tr key={r.subject.id}>
+                <td>{r.subject.name}</td>
+                <td>{r.creditUnit}</td>
+                <td>{r.grade}</td>
+                <td>{r.score}</td>
+                <td>{r.points*r.creditUnit}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="divider"></div>
+        <p>GPA = {totalWeighted} ÷ {totalCredits} = <strong>{gpa}</strong></p>
+        <h2>{classOf}</h2>
+      </div>
+      <div className="flex-row no-print">
+        <button className="btn-secondary" onClick={handlePrint}>Print result</button>
+        <button className="btn-secondary" onClick={handleSavePDF}>Save as PDF</button>
+        <button className="btn-primary" onClick={onExit}>Back to home</button>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// FLASHCARDS
+// =====================================================================
+function FlashcardsScreen({ user, onExit }){
+  const [subjects,setSubjects] = useState([]);
+  const [subjectId,setSubjectId] = useState("");
+  const [topics,setTopics] = useState([]);
+  const [topicId,setTopicId] = useState("");
+  const [cards,setCards] = useState([]);
+  const [idx,setIdx] = useState(0);
+  const [flipped,setFlipped] = useState(false);
+  const [points,setPoints] = useState(0);
+
+  useEffect(()=>{ (async()=>{
+    const { data } = await sb.from("subjects").select("*").order("code");
+    setSubjects(data||[]);
+  })(); },[]);
+
+  useEffect(()=>{
+    if(!subjectId){ setTopics([]); return; }
+    (async()=>{
+      const { data } = await sb.from("topics").select("*").eq("subject_id", subjectId).order("name");
+      setTopics(data||[]);
+    })();
+  },[subjectId]);
+
+  async function loadCards(){
+    if(!topicId) return;
+    const { data } = await sb.from("objective_questions").select("*").eq("topic_id", topicId);
+    setCards((data||[]).sort(()=>Math.random()-0.5));
+    setIdx(0); setFlipped(false);
+    const { data: fp } = await sb.from("flashcard_progress").select("*").eq("user_id",user.id).eq("topic_id",topicId).maybeSingle();
+    setPoints(fp?.points || 0);
+  }
+
+  async function markKnew(){
+    const newPoints = points + 5;
+    setPoints(newPoints);
+    await sb.from("flashcard_progress").upsert({ user_id:user.id, topic_id:topicId, points:newPoints, updated_at:new Date().toISOString() }, { onConflict:"user_id,topic_id" });
+    next();
+  }
+  function next(){ setFlipped(false); setIdx(i=> (i+1) % Math.max(cards.length,1)); }
+
+  const card = cards[idx];
+
+  return (
+    <div>
+      <button className="btn-ghost" onClick={onExit}>← Back</button>
+      <h1>Flashcards</h1>
+      <div className="card">
+        <div className="card-grid grid-2">
+          <div className="field">
+            <label>Subject</label>
+            <select value={subjectId} onChange={e=>{setSubjectId(e.target.value); setTopicId(""); setCards([]);}}>
+              <option value="">Select…</option>
+              {subjects.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Topic</label>
+            <select value={topicId} onChange={e=>setTopicId(e.target.value)} disabled={!subjectId}>
+              <option value="">Select…</option>
+              {topics.map(t=> <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        </div>
+        <button className="btn-primary" onClick={loadCards} disabled={!topicId}>Load flashcards</button>
+      </div>
+
+      {cards.length>0 && card && (
+        <div className="card" style={{textAlign:"center"}}>
+          <span className="flash-points">★ {points} points</span>
+          <p className="muted" style={{marginTop:"1em"}}>Card {idx+1} of {cards.length}</p>
+          <div style={{minHeight:"120px",display:"flex",alignItems:"center",justifyContent:"center",padding:"1em"}}>
+            <p style={{fontSize:"1.15rem",fontWeight:600}}>
+              {flipped ? `Answer: ${card.correct_option} — ${ {A:card.option_a,B:card.option_b,C:card.option_c,D:card.option_d,E:card.option_e}[card.correct_option] }` : card.question_text}
+            </p>
+          </div>
+          <div className="flex-row" style={{justifyContent:"center"}}>
+            <button className="btn-secondary" onClick={()=>setFlipped(f=>!f)}>{flipped ? "Show question" : "Show answer"}</button>
+            <button className="btn-secondary" onClick={next}>Skip</button>
+            <button className="btn-primary" onClick={markKnew}>I knew this (+5)</button>
+          </div>
+        </div>
+      )}
+      {cards.length===0 && topicId && <div className="empty-state">No questions found for this topic yet.</div>}
+    </div>
+  );
+}
+
+// =====================================================================
+// NOTES
+// =====================================================================
+function NotesScreen({ user, onExit }){
+  const [notes,setNotes] = useState([]);
+  const [subjects,setSubjects] = useState([]);
+  const [title,setTitle] = useState("");
+  const [content,setContent] = useState("");
+  const [subjectId,setSubjectId] = useState("");
+  const [file,setFile] = useState(null);
+  const [loading,setLoading] = useState(false);
+  const [err,setErr] = useState("");
+
+  async function load(){
+    const { data } = await sb.from("notes").select("*, subjects(name)").eq("user_id", user.id).order("created_at",{ascending:false});
+    setNotes(data||[]);
+  }
+  useEffect(()=>{
+    load();
+    (async()=>{ const { data } = await sb.from("subjects").select("*").order("code"); setSubjects(data||[]); })();
+  },[]);
+
+  async function handleAdd(){
+    if(!content.trim() && !file){ setErr("Add some text or a picture first."); return; }
+    setErr(""); setLoading(true);
+    let image_url = null;
+    if(file) image_url = await uploadImage(file);
+    const { error } = await sb.from("notes").insert({
+      user_id:user.id, subject_id: subjectId || null, title: title.trim() || null, content: content.trim() || null, image_url
+    });
+    setLoading(false);
+    if(error){ setErr("Could not save note."); return; }
+    setTitle(""); setContent(""); setFile(null); setSubjectId("");
+    load();
+  }
+
+  async function handleDelete(id){
+    await sb.from("notes").delete().eq("id", id);
+    load();
+  }
+
+  return (
+    <div>
+      <button className="btn-ghost" onClick={onExit}>← Back</button>
+      <h1>My Notes</h1>
+      <p className="muted">Jot down anything worth remembering — text, or a picture of a diagram from your textbook.</p>
+      {err && <div className="error-box">{err}</div>}
+      <div className="card">
+        <div className="field"><label>Title (optional)</label><input value={title} onChange={e=>setTitle(e.target.value)} /></div>
+        <div className="field">
+          <label>Subject (optional)</label>
+          <select value={subjectId} onChange={e=>setSubjectId(e.target.value)}>
+            <option value="">General</option>
+            {subjects.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <div className="field"><label>Note</label><textarea rows="4" value={content} onChange={e=>setContent(e.target.value)}></textarea></div>
+        <div className="field"><label>Attach a picture (optional)</label><input type="file" accept="image/*" onChange={e=>setFile(e.target.files[0])} /></div>
+        <button className="btn-primary" onClick={handleAdd} disabled={loading}>{loading?<span className="spinner"></span>:"Save note"}</button>
+      </div>
+
+      {notes.length===0 && <div className="empty-state">No notes yet. Add your first one above.</div>}
+      {notes.map(n=>(
+        <div key={n.id} className="card">
+          <div className="flex-between">
+            <div>
+              {n.title && <h3 style={{margin:0}}>{n.title}</h3>}
+              {n.subjects?.name && <span className="tag">{n.subjects.name}</span>}
+            </div>
+            <button className="btn-ghost" onClick={()=>handleDelete(n.id)}>Delete</button>
+          </div>
+          {n.content && <p style={{marginTop:".6em"}}>{n.content}</p>}
+          {n.image_url && <img className="q-image" src={n.image_url} alt="note attachment" />}
+          <p className="muted" style={{fontSize:".78rem"}}>{new Date(n.created_at).toLocaleString()}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// =====================================================================
+// HISTORY
+// =====================================================================
+function HistoryScreen({ user, onExit }){
+  const [attempts,setAttempts] = useState([]);
+  const [loading,setLoading] = useState(true);
+
+  useEffect(()=>{ (async()=>{
+    const { data } = await sb.from("attempts").select("*, subjects(name)").eq("user_id", user.id).order("submitted_at",{ascending:false});
+    setAttempts(data||[]);
+    setLoading(false);
+  })(); },[]);
+
+  if(loading) return <div className="empty-state"><span className="spinner"></span></div>;
+
+  return (
+    <div>
+      <button className="btn-ghost" onClick={onExit}>← Back</button>
+      <h1>Practice History</h1>
+      {attempts.length===0 && <div className="empty-state">No attempts yet. Try a practice mode from home.</div>}
+      {attempts.length>0 && (
+        <div className="card">
+          <table>
+            <thead><tr><th>Date</th><th>Mode</th><th>Subject</th><th>Score</th><th>Grade</th></tr></thead>
+            <tbody>
+              {attempts.map(a=>(
+                <tr key={a.id}>
+                  <td>{a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : "—"}</td>
+                  <td>{({objective_practice:"Objective",essay_practice:"Essay",general_practice:"Full Exam"})[a.mode] || a.mode}</td>
+                  <td>{a.subjects?.name || (a.mode==="general_practice" ? "All subjects" : "—")}</td>
+                  <td>{a.total_score ?? "—"}</td>
+                  <td>{a.grade || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================================================================
+// ADMIN PANEL
+// =====================================================================
+function AdminGate({ isAdmin, setIsAdmin, onExit }){
+  const [code,setCode] = useState("");
+  const [err,setErr] = useState("");
+
+  function handleSubmit(e){
+    e.preventDefault();
+    if(code.trim() === ADMIN_CODE){ setIsAdmin(true); setErr(""); }
+    else setErr("Incorrect admin code.");
+  }
+
+  if(isAdmin) return <AdminDashboard onExit={onExit} />;
+
+  return (
+    <div>
+      <button className="btn-ghost" onClick={onExit}>← Back</button>
+      <div className="center-screen" style={{minHeight:"40vh"}}>
+        <div className="card auth-card">
+          <div className="eyebrow">Restricted</div>
+          <h2>Admin access</h2>
+          {err && <div className="error-box">{err}</div>}
+          <form onSubmit={handleSubmit}>
+            <div className="field"><label>Admin code</label><input type="password" value={code} onChange={e=>setCode(e.target.value)} /></div>
+            <button className="btn-primary" style={{width:"100%"}}>Enter</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminDashboard({ onExit }){
+  const [tab,setTab] = useState("add_objective"); // add_objective | add_essay | bulk_objective | bulk_essay | manage | attempts
+
+  return (
+    <div>
+      <div className="flex-between no-print">
+        <h1>Admin Panel</h1>
+        <button className="btn-ghost" onClick={onExit}>← Exit admin</button>
+      </div>
+      <div className="flex-row" style={{marginBottom:"1.2em",flexWrap:"wrap"}}>
+        <button className={tab==="add_objective"?"btn-primary":"btn-secondary"} onClick={()=>setTab("add_objective")}>Add Objective Q</button>
+        <button className={tab==="add_essay"?"btn-primary":"btn-secondary"} onClick={()=>setTab("add_essay")}>Add Essay Q</button>
+        <button className={tab==="bulk_objective"?"btn-primary":"btn-secondary"} onClick={()=>setTab("bulk_objective")}>Bulk Objective Parser</button>
+        <button className={tab==="bulk_essay"?"btn-primary":"btn-secondary"} onClick={()=>setTab("bulk_essay")}>Bulk Essay Parser</button>
+        <button className={tab==="manage"?"btn-primary":"btn-secondary"} onClick={()=>setTab("manage")}>Manage Questions</button>
+        <button className={tab==="attempts"?"btn-primary":"btn-secondary"} onClick={()=>setTab("attempts")}>User Attempts</button>
+      </div>
+      {tab==="add_objective" && <AdminAddObjective />}
+      {tab==="add_essay" && <AdminAddEssay />}
+      {tab==="bulk_objective" && <AdminBulkObjective />}
+      {tab==="bulk_essay" && <AdminBulkEssay />}
+      {tab==="manage" && <AdminManageQuestions />}
+      {tab==="attempts" && <AdminAttempts />}
+    </div>
+  );
+}
+
+function useSubjectsAndTopics(){
+  const [subjects,setSubjects] = useState([]);
+  const [topicsBySubject,setTopicsBySubject] = useState({});
+  useEffect(()=>{ (async()=>{
+    const { data } = await sb.from("subjects").select("*").order("code");
+    setSubjects(data||[]);
+  })(); },[]);
+  async function loadTopics(subjectId){
+    const { data } = await sb.from("topics").select("*").eq("subject_id",subjectId).order("name");
+    setTopicsBySubject(prev=>({...prev,[subjectId]:data||[]}));
+    return data||[];
+  }
+  async function getOrCreateTopic(subjectId, name){
+    if(!name || !name.trim()) return null;
+    const trimmed = name.trim();
+    const existing = (topicsBySubject[subjectId]||[]).find(t=>t.name.toLowerCase()===trimmed.toLowerCase());
+    if(existing) return existing.id;
+    const { data, error } = await sb.from("topics").insert({ subject_id:subjectId, name:trimmed }).select().single();
+    if(error){ console.error(error); return null; }
+    setTopicsBySubject(prev=>({...prev,[subjectId]:[...(prev[subjectId]||[]),data]}));
+    return data.id;
+  }
+  return { subjects, topicsBySubject, loadTopics, getOrCreateTopic };
+}
+
+// ---------------------------------------------------------------------
+// ADMIN: Add single objective question
+// ---------------------------------------------------------------------
+function AdminAddObjective(){
+  const { subjects, topicsBySubject, loadTopics, getOrCreateTopic } = useSubjectsAndTopics();
+  const [subjectId,setSubjectId] = useState("");
+  const [topicName,setTopicName] = useState("");
+  const [questionText,setQuestionText] = useState("");
+  const [options,setOptions] = useState({A:"",B:"",C:"",D:"",E:""});
+  const [correct,setCorrect] = useState("A");
+  const [explanation,setExplanation] = useState("");
+  const [file,setFile] = useState(null);
+  const [msg,setMsg] = useState("");
+  const [loading,setLoading] = useState(false);
+
+  useEffect(()=>{ if(subjectId) loadTopics(subjectId); },[subjectId]);
+
+  async function handleSubmit(){
+    setMsg("");
+    if(!subjectId || !questionText.trim() || !options.A.trim() || !options.B.trim() || !options.C.trim() || !options.D.trim()){
+      setMsg("Please fill subject, question text, and at least options A–D.");
+      return;
+    }
+    setLoading(true);
+    let image_url = null;
+    if(file) image_url = await uploadImage(file);
+    const topic_id = await getOrCreateTopic(subjectId, topicName);
+    const { error } = await sb.from("objective_questions").insert({
+      subject_id: subjectId, topic_id, question_text: questionText.trim(), image_url,
+      option_a: options.A, option_b: options.B, option_c: options.C, option_d: options.D,
+      option_e: options.E.trim() || null, correct_option: correct, explanation: explanation.trim() || null
+    });
+    setLoading(false);
+    if(error){ setMsg("Could not save question."); console.error(error); return; }
+    setMsg("Question added.");
+    setQuestionText(""); setOptions({A:"",B:"",C:"",D:"",E:""}); setExplanation(""); setFile(null);
+  }
+
+  return (
+    <div className="card">
+      <h3>Add an objective question</h3>
+      {msg && <div className={msg.includes("added")?"success-box":"error-box"}>{msg}</div>}
+      <div className="card-grid grid-2">
+        <div className="field">
+          <label>Subject</label>
+          <select value={subjectId} onChange={e=>setSubjectId(e.target.value)}>
+            <option value="">Select…</option>
+            {subjects.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Topic (type new or existing)</label>
+          <input value={topicName} onChange={e=>setTopicName(e.target.value)} list="topic-suggestions" />
+          <datalist id="topic-suggestions">
+            {(topicsBySubject[subjectId]||[]).map(t=> <option key={t.id} value={t.name} />)}
+          </datalist>
+        </div>
+      </div>
+      <div className="field"><label>Question</label><textarea rows="3" value={questionText} onChange={e=>setQuestionText(e.target.value)}></textarea></div>
+      <div className="field"><label>Picture / diagram (optional)</label><input type="file" accept="image/*" onChange={e=>setFile(e.target.files[0])} /></div>
+      <div className="card-grid grid-2">
+        {["A","B","C","D","E"].map(label=>(
+          <div className="field" key={label}>
+            <label>Option {label} {label==="E" && "(optional)"}</label>
+            <input value={options[label]} onChange={e=>setOptions(o=>({...o,[label]:e.target.value}))} />
+          </div>
+        ))}
+        <div className="field">
+          <label>Correct option</label>
+          <select value={correct} onChange={e=>setCorrect(e.target.value)}>
+            {["A","B","C","D","E"].map(l=> <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="field"><label>Explanation (optional)</label><textarea rows="2" value={explanation} onChange={e=>setExplanation(e.target.value)}></textarea></div>
+      <button className="btn-primary" onClick={handleSubmit} disabled={loading}>{loading?<span className="spinner"></span>:"Save question"}</button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// ADMIN: Add single essay question (8 to answer 5; 10 likely answers each)
+// ---------------------------------------------------------------------
+function AdminAddEssay(){
+  const { subjects, topicsBySubject, loadTopics, getOrCreateTopic } = useSubjectsAndTopics();
+  const essaySubjects = subjects.filter(s=>s.type==="essay");
+  const [subjectId,setSubjectId] = useState("");
+  const [topicName,setTopicName] = useState("");
+  const [questionText,setQuestionText] = useState("");
+  const [file,setFile] = useState(null);
+  const [answerOptions,setAnswerOptions] = useState(Array.from({length:10},(_,i)=>({label:i+1,text:"",mark:0})));
+  const [msg,setMsg] = useState("");
+  const [loading,setLoading] = useState(false);
+
+  useEffect(()=>{ if(subjectId) loadTopics(subjectId); },[subjectId]);
+
+  function updateOpt(idx, field, val){
+    setAnswerOptions(prev=> prev.map((o,i)=> i===idx ? {...o,[field]:val} : o));
+  }
+
+  async function handleSubmit(){
+    setMsg("");
+    const filled = answerOptions.filter(o=>o.text.trim());
+    if(!subjectId || !questionText.trim() || filled.length < 2){
+      setMsg("Please fill subject, question, and at least 2 likely answers.");
+      return;
+    }
+    setLoading(true);
+    let image_url = null;
+    if(file) image_url = await uploadImage(file);
+    const topic_id = await getOrCreateTopic(subjectId, topicName);
+    const { data: q, error } = await sb.from("essay_questions").insert({
+      subject_id: subjectId, topic_id, question_text: questionText.trim(), image_url
+    }).select().single();
+    if(error){ setLoading(false); setMsg("Could not save question."); console.error(error); return; }
+    const rows = filled.map(o=>({ essay_question_id:q.id, option_label:o.label, option_text:o.text.trim(), mark_value: parseFloat(o.mark)||0 }));
+    const { error: optErr } = await sb.from("essay_answer_options").insert(rows);
+    setLoading(false);
+    if(optErr){ setMsg("Question saved, but answer options failed."); console.error(optErr); return; }
+    setMsg("Essay question added.");
+    setQuestionText(""); setFile(null);
+    setAnswerOptions(Array.from({length:10},(_,i)=>({label:i+1,text:"",mark:0})));
+  }
+
+  return (
+    <div className="card">
+      <h3>Add an essay question</h3>
+      <p className="muted">Provide up to 10 likely answers. Give a mark value to each correct one — the rest stay at 0 and act as the wrong picks (each costs 2 marks if chosen).</p>
+      {msg && <div className={msg.includes("added")?"success-box":"error-box"}>{msg}</div>}
+      <div className="card-grid grid-2">
+        <div className="field">
+          <label>Subject</label>
+          <select value={subjectId} onChange={e=>setSubjectId(e.target.value)}>
+            <option value="">Select…</option>
+            {essaySubjects.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Topic</label>
+          <input value={topicName} onChange={e=>setTopicName(e.target.value)} list="essay-topic-suggestions" />
+          <datalist id="essay-topic-suggestions">
+            {(topicsBySubject[subjectId]||[]).map(t=> <option key={t.id} value={t.name} />)}
+          </datalist>
+        </div>
+      </div>
+      <div className="field"><label>Question</label><textarea rows="3" value={questionText} onChange={e=>setQuestionText(e.target.value)}></textarea></div>
+      <div className="field"><label>Picture / diagram (optional)</label><input type="file" accept="image/*" onChange={e=>setFile(e.target.files[0])} /></div>
+      <div className="divider"></div>
+      {answerOptions.map((o,idx)=>(
+        <div key={o.label} className="flex-row" style={{marginBottom:".6em"}}>
+          <span style={{minWidth:"70px",fontWeight:700}}>Answer {o.label}</span>
+          <input style={{flex:3}} placeholder="Answer text" value={o.text} onChange={e=>updateOpt(idx,"text",e.target.value)} />
+          <input style={{flex:1}} type="number" placeholder="Marks" value={o.mark} onChange={e=>updateOpt(idx,"mark",e.target.value)} />
+        </div>
+      ))}
+      <button className="btn-primary" onClick={handleSubmit} disabled={loading}>{loading?<span className="spinner"></span>:"Save essay question"}</button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// ADMIN: Bulk Objective Parser
+// Format per question block:
+// Subject:
+// Topic:
+// Question:
+// Option A
+// Option B
+// Option C
+// Option D
+// Option E
+// Answer:
+// Explanation:
+// ---------------------------------------------------------------------
+function parseBulkObjective(raw){
+  const blocks = raw.split(/\n\s*\n+/).map(b=>b.trim()).filter(Boolean);
+  const parsed = [];
+  const problems = [];
+  blocks.forEach((block, bi)=>{
+    const lines = block.split("\n").map(l=>l.trim()).filter(Boolean);
+    const get = (prefix) => {
+      const line = lines.find(l=> l.toLowerCase().startsWith(prefix.toLowerCase()));
+      return line ? line.slice(line.indexOf(":")+1).trim() : "";
+    };
+    const subject = get("Subject:");
+    const topic = get("Topic:");
+    const question = get("Question:");
+    const answer = get("Answer:").toUpperCase().replace(/[^A-E]/g,"");
+    const explanation = get("Explanation:");
+    const opts = {};
+    ["A","B","C","D","E"].forEach(label=>{
+      const line = lines.find(l=> new RegExp(`^Option\\s*${label}\\b`, "i").test(l));
+      if(line) opts[label] = line.replace(new RegExp(`^Option\\s*${label}[:\\.\\)]?\\s*`,"i"),"").trim();
+    });
+    if(!subject || !question || !opts.A || !opts.B || !opts.C || !opts.D || !answer){
+      problems.push(`Block ${bi+1}: missing required field(s) (need Subject, Question, Option A-D, Answer).`);
+      return;
+    }
+    parsed.push({ subject, topic, question, opts, answer, explanation });
+  });
+  return { parsed, problems };
+}
+
+function AdminBulkObjective(){
+  const [raw,setRaw] = useState("");
+  const [preview,setPreview] = useState(null);
+  const [problems,setProblems] = useState([]);
+  const [saving,setSaving] = useState(false);
+  const [msg,setMsg] = useState("");
+
+  function handlePreview(){
+    const { parsed, problems } = parseBulkObjective(raw);
+    setPreview(parsed);
+    setProblems(problems);
+    setMsg("");
+  }
+
+  async function handleSaveAll(){
+    if(!preview || preview.length===0) return;
+    setSaving(true); setMsg("");
+    const { data: subjects } = await sb.from("subjects").select("*");
+    const { data: allTopics } = await sb.from("topics").select("*");
+    let topicsCache = allTopics || [];
+    let saved = 0, failed = 0;
+    for(const item of preview){
+      const subj = (subjects||[]).find(s=> s.code.toLowerCase()===item.subject.toLowerCase().replace(/\s+/g,"") || s.name.toLowerCase()===item.subject.toLowerCase());
+      if(!subj){ failed++; continue; }
+      let topic_id = null;
+      if(item.topic){
+        let t = topicsCache.find(t=>t.subject_id===subj.id && t.name.toLowerCase()===item.topic.toLowerCase());
+        if(!t){
+          const { data: newTopic } = await sb.from("topics").insert({ subject_id:subj.id, name:item.topic }).select().single();
+          if(newTopic){ t = newTopic; topicsCache.push(newTopic); }
+        }
+        topic_id = t ? t.id : null;
+      }
+      const { error } = await sb.from("objective_questions").insert({
+        subject_id: subj.id, topic_id, question_text: item.question,
+        option_a: item.opts.A, option_b: item.opts.B, option_c: item.opts.C, option_d: item.opts.D,
+        option_e: item.opts.E || null, correct_option: item.answer, explanation: item.explanation || null
+      });
+      if(error){ failed++; console.error(error); } else saved++;
+    }
+    setSaving(false);
+    setMsg(`Saved ${saved} question(s).${failed>0?` ${failed} failed (check subject names match your subject codes/names exactly).`:""}`);
+    if(failed===0){ setRaw(""); setPreview(null); }
+  }
+
+  return (
+    <div className="card">
+      <h3>Bulk Objective Parser</h3>
+      <p className="muted">Paste multiple questions, separated by a blank line, in this format:</p>
+      <pre style={{background:"#f5f2e8",padding:"1em",borderRadius:"8px",fontSize:".82rem",overflowX:"auto"}}>
+{`Subject: MTH102
+Topic: Functions
+Question: What is f(2) if f(x) = x^2 + 1?
+Option A: 3
+Option B: 5
+Option C: 4
+Option D: 6
+Option E: 7
+Answer: B
+Explanation: f(2) = 2^2 + 1 = 5`}
+      </pre>
+      <div className="field"><label>Paste your questions</label><textarea rows="10" value={raw} onChange={e=>setRaw(e.target.value)}></textarea></div>
+      <div className="flex-row">
+        <button className="btn-secondary" onClick={handlePreview}>Preview</button>
+        {preview && preview.length>0 && <button className="btn-primary" onClick={handleSaveAll} disabled={saving}>{saving?<span className="spinner"></span>:`Save all ${preview.length} question(s)`}</button>}
+      </div>
+      {msg && <div className="success-box" style={{marginTop:"1em"}}>{msg}</div>}
+      {problems.length>0 && <div className="error-box" style={{marginTop:"1em"}}>{problems.map((p,i)=><div key={i}>{p}</div>)}</div>}
+      {preview && (
+        <div style={{marginTop:"1em"}}>
+          <p className="muted">{preview.length} question(s) ready to save:</p>
+          {preview.map((p,i)=>(
+            <div key={i} className="card" style={{padding:"1em"}}>
+              <p style={{fontWeight:600}}>{p.subject} {p.topic && `· ${p.topic}`}</p>
+              <p>{p.question}</p>
+              <p className="muted" style={{fontSize:".85rem"}}>Answer: {p.answer}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// ADMIN: Bulk Essay Parser
+// Format:
+// Subject:
+// Topic:
+// Question:
+// Answer 1 (mark)
+// Answer 2 (mark)
+// ... up to Answer 10
+// ---------------------------------------------------------------------
+function parseBulkEssay(raw){
+  const blocks = raw.split(/\n\s*\n+/).map(b=>b.trim()).filter(Boolean);
+  const parsed = [];
+  const problems = [];
+  blocks.forEach((block,bi)=>{
+    const lines = block.split("\n").map(l=>l.trim()).filter(Boolean);
+    const get = (prefix) => {
+      const line = lines.find(l=> l.toLowerCase().startsWith(prefix.toLowerCase()));
+      return line ? line.slice(line.indexOf(":")+1).trim() : "";
+    };
+    const subject = get("Subject:");
+    const topic = get("Topic:");
+    const question = get("Question:");
+    const answers = [];
+    for(let n=1;n<=10;n++){
+      const line = lines.find(l=> new RegExp(`^Answer\\s*${n}\\b`,"i").test(l));
+      if(!line) continue;
+      const rest = line.replace(new RegExp(`^Answer\\s*${n}[:\\.\\)]?\\s*`,"i"),"").trim();
+      // expect mark in parentheses at the end e.g. "Mitosis happens in stages (5)"
+      const markMatch = rest.match(/\(([\d.]+)\)\s*$/);
+      const mark = markMatch ? parseFloat(markMatch[1]) : 0;
+      const text = markMatch ? rest.slice(0, rest.lastIndexOf("(")).trim() : rest;
+      answers.push({ label:n, text, mark });
+    }
+    if(!subject || !question || answers.length < 2){
+      problems.push(`Block ${bi+1}: missing required field(s) (need Subject, Question, at least 2 Answer lines like "Answer 1 ... (5)").`);
+      return;
+    }
+    parsed.push({ subject, topic, question, answers });
+  });
+  return { parsed, problems };
+}
+
+function AdminBulkEssay(){
+  const [raw,setRaw] = useState("");
+  const [preview,setPreview] = useState(null);
+  const [problems,setProblems] = useState([]);
+  const [saving,setSaving] = useState(false);
+  const [msg,setMsg] = useState("");
+
+  function handlePreview(){
+    const { parsed, problems } = parseBulkEssay(raw);
+    setPreview(parsed); setProblems(problems); setMsg("");
+  }
+
+  async function handleSaveAll(){
+    if(!preview || preview.length===0) return;
+    setSaving(true); setMsg("");
+    const { data: subjects } = await sb.from("subjects").select("*");
+    const { data: allTopics } = await sb.from("topics").select("*");
+    let topicsCache = allTopics || [];
+    let saved=0, failed=0;
+    for(const item of preview){
+      const subj = (subjects||[]).find(s=> s.code.toLowerCase()===item.subject.toLowerCase().replace(/\s+/g,"") || s.name.toLowerCase()===item.subject.toLowerCase());
+      if(!subj){ failed++; continue; }
+      let topic_id = null;
+      if(item.topic){
+        let t = topicsCache.find(t=>t.subject_id===subj.id && t.name.toLowerCase()===item.topic.toLowerCase());
+        if(!t){
+          const { data: newTopic } = await sb.from("topics").insert({ subject_id:subj.id, name:item.topic }).select().single();
+          if(newTopic){ t = newTopic; topicsCache.push(newTopic); }
+        }
+        topic_id = t ? t.id : null;
+      }
+      const { data: q, error } = await sb.from("essay_questions").insert({ subject_id:subj.id, topic_id, question_text:item.question }).select().single();
+      if(error){ failed++; console.error(error); continue; }
+      const rows = item.answers.map(a=>({ essay_question_id:q.id, option_label:a.label, option_text:a.text, mark_value:a.mark }));
+      const { error: optErr } = await sb.from("essay_answer_options").insert(rows);
+      if(optErr){ failed++; console.error(optErr); } else saved++;
+    }
+    setSaving(false);
+    setMsg(`Saved ${saved} question(s).${failed>0?` ${failed} failed.`:""}`);
+    if(failed===0){ setRaw(""); setPreview(null); }
+  }
+
+  return (
+    <div className="card">
+      <h3>Bulk Essay Parser</h3>
+      <p className="muted">Paste multiple questions, separated by a blank line. Put the mark in parentheses at the end of each correct answer line; leave it as (0) or omit marks for wrong options.</p>
+      <pre style={{background:"#f5f2e8",padding:"1em",borderRadius:"8px",fontSize:".82rem",overflowX:"auto"}}>
+{`Subject: MLS102
+Topic: Cell Biology
+Question: Describe the stages of mitosis.
+Answer 1: Prophase - chromosomes condense (5)
+Answer 2: Metaphase - chromosomes align (5)
+Answer 3: Anaphase - chromosomes separate (5)
+Answer 4: Telophase - nuclear envelope reforms (5)
+Answer 5: Meiosis occurs in gametes (0)
+Answer 6: Interphase is part of mitosis (0)`}
+      </pre>
+      <div className="field"><label>Paste your questions</label><textarea rows="10" value={raw} onChange={e=>setRaw(e.target.value)}></textarea></div>
+      <div className="flex-row">
+        <button className="btn-secondary" onClick={handlePreview}>Preview</button>
+        {preview && preview.length>0 && <button className="btn-primary" onClick={handleSaveAll} disabled={saving}>{saving?<span className="spinner"></span>:`Save all ${preview.length} question(s)`}</button>}
+      </div>
+      {msg && <div className="success-box" style={{marginTop:"1em"}}>{msg}</div>}
+      {problems.length>0 && <div className="error-box" style={{marginTop:"1em"}}>{problems.map((p,i)=><div key={i}>{p}</div>)}</div>}
+      {preview && (
+        <div style={{marginTop:"1em"}}>
+          <p className="muted">{preview.length} question(s) ready to save:</p>
+          {preview.map((p,i)=>(
+            <div key={i} className="card" style={{padding:"1em"}}>
+              <p style={{fontWeight:600}}>{p.subject} {p.topic && `· ${p.topic}`}</p>
+              <p>{p.question}</p>
+              <p className="muted" style={{fontSize:".85rem"}}>{p.answers.length} answers parsed</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// ADMIN: Manage / delete questions
+// ---------------------------------------------------------------------
+function AdminManageQuestions(){
+  const [subjects,setSubjects] = useState([]);
+  const [subjectId,setSubjectId] = useState("");
+  const [qType,setQType] = useState("objective");
+  const [questions,setQuestions] = useState([]);
+  const [loading,setLoading] = useState(false);
+
+  useEffect(()=>{ (async()=>{
+    const { data } = await sb.from("subjects").select("*").order("code");
+    setSubjects(data||[]);
+  })(); },[]);
+
+  useEffect(()=>{
+    if(!subjectId) { setQuestions([]); return; }
+    const subj = subjects.find(s=>s.id===subjectId);
+    if(subj) setQType(subj.type);
+    loadQuestions(subjectId, subj?.type);
+  },[subjectId]);
+
+  async function loadQuestions(subjId, type){
+    setLoading(true);
+    if(type==="essay"){
+      const { data } = await sb.from("essay_questions").select("*, essay_answer_options(*)").eq("subject_id", subjId);
+      setQuestions(data||[]);
+    } else {
+      const { data } = await sb.from("objective_questions").select("*").eq("subject_id", subjId);
+      setQuestions(data||[]);
+    }
+    setLoading(false);
+  }
+
+  async function handleDelete(id){
+    if(qType==="essay") await sb.from("essay_questions").delete().eq("id", id);
+    else await sb.from("objective_questions").delete().eq("id", id);
+    loadQuestions(subjectId, qType);
+  }
+
+  return (
+    <div className="card">
+      <h3>Manage questions</h3>
+      <div className="field">
+        <label>Subject</label>
+        <select value={subjectId} onChange={e=>setSubjectId(e.target.value)}>
+          <option value="">Select…</option>
+          {subjects.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      </div>
+      {loading && <div className="empty-state"><span className="spinner"></span></div>}
+      {!loading && subjectId && questions.length===0 && <div className="empty-state">No questions yet for this subject.</div>}
+      {questions.map(q=>(
+        <div key={q.id} className="card" style={{padding:"1em"}}>
+          <div className="flex-between">
+            <p style={{fontWeight:600,flex:1}}>{q.question_text}</p>
+            <button className="btn-warn" onClick={()=>handleDelete(q.id)}>Delete</button>
+          </div>
+          {q.image_url && <img className="q-image" src={q.image_url} style={{maxWidth:"200px"}} alt="" />}
+          {qType==="objective"
+            ? <p className="muted" style={{fontSize:".85rem"}}>Correct: {q.correct_option}</p>
+            : <p className="muted" style={{fontSize:".85rem"}}>{(q.essay_answer_options||[]).length} answer options</p>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// ADMIN: View all user attempts
+// ---------------------------------------------------------------------
+function AdminAttempts(){
+  const [attempts,setAttempts] = useState([]);
+  const [loading,setLoading] = useState(true);
+
+  useEffect(()=>{ (async()=>{
+    const { data } = await sb.from("attempts").select("*, app_users(full_name,email), subjects(name)").order("submitted_at",{ascending:false}).limit(200);
+    setAttempts(data||[]);
+    setLoading(false);
+  })(); },[]);
+
+  if(loading) return <div className="empty-state"><span className="spinner"></span></div>;
+
+  return (
+    <div className="card">
+      <h3>All user attempts</h3>
+      {attempts.length===0 && <div className="empty-state">No attempts recorded yet.</div>}
+      {attempts.length>0 && (
+        <table>
+          <thead><tr><th>User</th><th>Mode</th><th>Subject</th><th>Score</th><th>Grade</th><th>Date</th></tr></thead>
+          <tbody>
+            {attempts.map(a=>(
+              <tr key={a.id}>
+                <td>{a.app_users?.full_name || "—"}</td>
+                <td>{({objective_practice:"Objective",essay_practice:"Essay",general_practice:"Full Exam"})[a.mode] || a.mode}</td>
+                <td>{a.subjects?.name || (a.mode==="general_practice"?"All subjects":"—")}</td>
+                <td>{a.total_score ?? "—"}</td>
+                <td>{a.grade || "—"}</td>
+                <td>{a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
