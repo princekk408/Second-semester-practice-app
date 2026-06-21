@@ -298,6 +298,43 @@ async function uploadImage(file){
 }
 
 // =====================================================================
+// NO-REPEAT QUESTION TRACKING
+// Avoids serving the same question twice to the same user for a subject
+// until the whole bank for that subject (and question type) has been
+// seen, at which point it resets automatically.
+// =====================================================================
+async function getSeenQuestionIds(userId, subjectId, questionType, poolSize){
+  const { data: seenRows } = await sb.from("seen_questions").select("question_id")
+    .eq("user_id", userId).eq("subject_id", subjectId).eq("question_type", questionType);
+  let seen = seenRows || [];
+  if(poolSize > 0 && seen.length >= poolSize){
+    await sb.from("seen_questions").delete().eq("user_id", userId).eq("subject_id", subjectId).eq("question_type", questionType);
+    seen = [];
+  }
+  return new Set(seen.map(r => r.question_id));
+}
+
+async function recordSeenQuestions(userId, subjectId, questionType, questions){
+  if(!questions || questions.length===0) return;
+  const rows = questions.map(q => ({ user_id:userId, question_id:q.id, question_type:questionType, subject_id:subjectId }));
+  await sb.from("seen_questions").upsert(rows, { onConflict: "user_id,question_id,question_type" });
+}
+
+// Pick `count` questions from `pool`, preferring ones not in `seenIds`.
+// Falls back to already-seen ones only if there aren't enough unseen
+// to fill the requested count.
+function pickWithNoRepeat(pool, count, seenIds){
+  seenIds = seenIds || new Set();
+  const unseen = pool.filter(q => !seenIds.has(q.id)).sort(()=>Math.random()-0.5);
+  const seen = pool.filter(q => seenIds.has(q.id)).sort(()=>Math.random()-0.5);
+  let chosen = unseen.slice(0, count);
+  if(chosen.length < count){
+    chosen = chosen.concat(seen.slice(0, count - chosen.length));
+  }
+  return chosen.sort(()=>Math.random()-0.5);
+}
+
+// =====================================================================
 // ROOT APP
 // =====================================================================
 function App(){
@@ -640,12 +677,12 @@ function ObjectivePracticeFlow({ user, onExit }){
   const [config, setConfig] = useState(null);
   const [result, setResult] = useState(null);
 
-  if(stage==="setup") return <ObjectiveSetup onStart={(cfg)=>{ setConfig(cfg); setStage("exam"); }} onExit={onExit} />;
+  if(stage==="setup") return <ObjectiveSetup user={user} onStart={(cfg)=>{ setConfig(cfg); setStage("exam"); }} onExit={onExit} />;
   if(stage==="exam") return <ObjectiveExam config={config} user={user} onFinish={(res)=>{ setResult(res); setStage("results"); }} />;
   if(stage==="results") return <ObjectiveResults result={result} config={config} onExit={onExit} />;
 }
 
-function ObjectiveSetup({ onStart, onExit }){
+function ObjectiveSetup({ user, onStart, onExit }){
   const [subjects,setSubjects] = useState([]);
   const [topics,setTopics] = useState([]);
   const [subjectId,setSubjectId] = useState("");
@@ -690,8 +727,9 @@ function ObjectiveSetup({ onStart, onExit }){
     const { data, error } = await query;
     if(error){ setErr("Could not load questions."); return; }
     if(!data || data.length === 0){ setErr("No questions found for this subject/topic selection yet."); return; }
-    const shuffled = [...data].sort(()=>Math.random()-0.5);
-    const picked = shuffled.slice(0, Math.min(questionCount, shuffled.length));
+    const seenIds = await getSeenQuestionIds(user.id, subjectId, "objective", data.length);
+    const picked = pickWithNoRepeat(data, Math.min(questionCount, data.length), seenIds);
+    await recordSeenQuestions(user.id, subjectId, "objective", picked);
     const subj = subjects.find(s=>s.id===subjectId);
     const durationSeconds = questionCount === 50 ? 30*60 : 60*60;
     onStart({
@@ -907,12 +945,12 @@ function EssayPracticeFlow({ user, onExit }){
   const [config, setConfig] = useState(null);
   const [result, setResult] = useState(null);
 
-  if(stage==="setup") return <EssaySetup onStart={(cfg)=>{ setConfig(cfg); setStage("exam"); }} onExit={onExit} />;
+  if(stage==="setup") return <EssaySetup user={user} onStart={(cfg)=>{ setConfig(cfg); setStage("exam"); }} onExit={onExit} />;
   if(stage==="exam") return <EssayExam config={config} user={user} onFinish={(res)=>{ setResult(res); setStage("results"); }} />;
   if(stage==="results") return <EssayResults result={result} config={config} onExit={onExit} />;
 }
 
-function EssaySetup({ onStart, onExit }){
+function EssaySetup({ user, onStart, onExit }){
   const [subjects,setSubjects] = useState([]);
   const [subjectId,setSubjectId] = useState("");
   const [loading,setLoading] = useState(true);
@@ -932,8 +970,9 @@ function EssaySetup({ onStart, onExit }){
     const { data: qs, error } = await sb.from("essay_questions").select("*, essay_answer_options(*)").eq("subject_id", subjectId);
     if(error){ setErr("Could not load questions."); return; }
     if(!qs || qs.length < 1){ setErr("No essay questions found for this subject yet."); return; }
-    const shuffled = [...qs].sort(()=>Math.random()-0.5);
-    const picked = shuffled.slice(0, Math.min(8, shuffled.length));
+    const seenIds = await getSeenQuestionIds(user.id, subjectId, "essay", qs.length);
+    const picked = pickWithNoRepeat(qs, Math.min(8, qs.length), seenIds);
+    await recordSeenQuestions(user.id, subjectId, "essay", picked);
     const subj = subjects.find(s=>s.id===subjectId);
     onStart({ subject: subj, questions: picked, durationSeconds: 60*60 });
   }
@@ -1138,12 +1177,12 @@ function GeneralPracticeFlow({ user, onExit }){
   const [bundle,setBundle] = useState(null);
   const [result,setResult] = useState(null);
 
-  if(stage==="setup") return <GeneralSetup onStart={(b)=>{setBundle(b); setStage("exam");}} onExit={onExit} />;
+  if(stage==="setup") return <GeneralSetup user={user} onStart={(b)=>{setBundle(b); setStage("exam");}} onExit={onExit} />;
   if(stage==="exam") return <GeneralExam bundle={bundle} user={user} onFinish={(r)=>{setResult(r); setStage("results");}} />;
   if(stage==="results") return <GeneralResults result={result} user={user} onExit={onExit} />;
 }
 
-function GeneralSetup({ onStart, onExit }){
+function GeneralSetup({ user, onStart, onExit }){
   const [loading,setLoading] = useState(true);
   const [err,setErr] = useState("");
 
@@ -1157,13 +1196,17 @@ function GeneralSetup({ onStart, onExit }){
         const { data: qs } = await sb.from("objective_questions").select("*").eq("subject_id", subj.id);
         if(!qs || qs.length===0){ setErr(`No questions found for ${subj.name} yet.`); setLoading(false); return; }
         const count = Math.min(subj.question_pool_size, qs.length);
-        const shuffled = [...qs].sort(()=>Math.random()-0.5).slice(0,count);
-        subjectData.push({ subject: subj, type:"objective", questions: shuffled });
+        const seenIds = await getSeenQuestionIds(user.id, subj.id, "objective", qs.length);
+        const picked = pickWithNoRepeat(qs, count, seenIds);
+        await recordSeenQuestions(user.id, subj.id, "objective", picked);
+        subjectData.push({ subject: subj, type:"objective", questions: picked });
       } else {
         const { data: qs } = await sb.from("essay_questions").select("*, essay_answer_options(*)").eq("subject_id", subj.id);
         if(!qs || qs.length===0){ setErr(`No essay questions found for ${subj.name} yet.`); setLoading(false); return; }
-        const shuffled = [...qs].sort(()=>Math.random()-0.5).slice(0,8);
-        subjectData.push({ subject: subj, type:"essay", questions: shuffled });
+        const seenIds = await getSeenQuestionIds(user.id, subj.id, "essay", qs.length);
+        const picked = pickWithNoRepeat(qs, Math.min(8, qs.length), seenIds);
+        await recordSeenQuestions(user.id, subj.id, "essay", picked);
+        subjectData.push({ subject: subj, type:"essay", questions: picked });
       }
     }
     setLoading(false);
